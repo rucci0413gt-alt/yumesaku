@@ -2,6 +2,41 @@ import { useState, useRef, useEffect } from "react";
 import Head from "next/head";
 
 export default function Home() {
+  // ===== アクセスコード認証 =====
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [codeInput, setCodeInput] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [codeLoading, setCodeLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("yumesaku_access");
+      const correctCode = process.env.NEXT_PUBLIC_ACCESS_CODE;
+      if (saved && correctCode && saved === correctCode) {
+        setAuthenticated(true);
+      }
+      setAuthChecking(false);
+    }
+  }, []);
+
+  const handleCodeSubmit = (e) => {
+    if (e) e.preventDefault();
+    setCodeLoading(true);
+    setCodeError("");
+    const correctCode = process.env.NEXT_PUBLIC_ACCESS_CODE;
+    setTimeout(() => {
+      if (codeInput.trim() === correctCode) {
+        localStorage.setItem("yumesaku_access", codeInput.trim());
+        setAuthenticated(true);
+      } else {
+        setCodeError("アクセスコードが正しくありません");
+      }
+      setCodeLoading(false);
+    }, 400);
+  };
+
+  // ===== 既存のstate =====
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -12,7 +47,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [generatedApp, setGeneratedApp] = useState(null);
   const [appTitle, setAppTitle] = useState("");
-  const [tab, setTab] = useState("chat"); // "chat" | "preview"
+  const [tab, setTab] = useState("chat");
   const [downloaded, setDownloaded] = useState(false);
   const bottomRef = useRef(null);
   const iframeRef = useRef(null);
@@ -27,13 +62,11 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
-
     const userMsg = { role: "user", content: input.trim() };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput("");
     setLoading(true);
-
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -42,7 +75,6 @@ export default function Home() {
           messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
-
       const data = await res.json();
       if (!res.ok) {
         setMessages((prev) => [...prev, { role: "assistant", content: `エラーが発生しました: ${data.error}` }]);
@@ -52,7 +84,6 @@ export default function Home() {
         }
         if (data.appHtml) {
           setGeneratedApp(data.appHtml);
-          // タイトルをHTMLから抽出
           const titleMatch = data.appHtml.match(/<title>(.*?)<\/title>/);
           setAppTitle(titleMatch ? titleMatch[1] : "作成したアプリ");
         }
@@ -91,6 +122,90 @@ export default function Home() {
     setTab("chat");
   };
 
+  // ===== 認証チェック中 =====
+  if (authChecking) {
+    return (
+      <div style={{ height: "100vh", background: "#0d0d0d", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: "#555", fontSize: 13 }}>読み込み中...</div>
+      </div>
+    );
+  }
+
+  // ===== アクセスコード入力画面 =====
+  if (!authenticated) {
+    return (
+      <>
+        <Head>
+          <title>ユメサク - アクセスコード</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+        </Head>
+        <div style={{ height: "100vh", background: "#0d0d0d", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", fontFamily: "-apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif" }}>
+          <div style={{ maxWidth: 360, width: "100%", textAlign: "center" }}>
+            <div style={{ width: 60, height: 60, borderRadius: 16, background: "linear-gradient(135deg, #7c3aed, #db2777)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, margin: "0 auto 20px" }}>✦</div>
+            <h1 style={{ color: "#fff", fontSize: 22, fontWeight: "700", marginBottom: 8, letterSpacing: "-0.5px" }}>ユメサク</h1>
+            <p style={{ color: "#666", fontSize: 12, marginBottom: 28 }}>モニター限定公開中</p>
+
+            <div style={{ background: "#161616", border: "1px solid #2a2a2a", borderRadius: 16, padding: "24px 20px" }}>
+              <div style={{ color: "#aaa", fontSize: 13, marginBottom: 14 }}>
+                アクセスコードを入力してください
+              </div>
+              <input
+                type="text"
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCodeSubmit()}
+                placeholder="コード"
+                autoFocus
+                style={{
+                  width: "100%",
+                  background: "#0d0d0d",
+                  border: `1px solid ${codeError ? "#dc2626" : "#2a2a2a"}`,
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  color: "#fff",
+                  fontSize: 15,
+                  outline: "none",
+                  fontFamily: "inherit",
+                  textAlign: "center",
+                  letterSpacing: "2px",
+                  marginBottom: 12,
+                }}
+              />
+              {codeError && (
+                <div style={{ color: "#dc2626", fontSize: 11, marginBottom: 12 }}>{codeError}</div>
+              )}
+              <button
+                onClick={handleCodeSubmit}
+                disabled={!codeInput.trim() || codeLoading}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: 10,
+                  border: "none",
+                  background: codeInput.trim() && !codeLoading ? "linear-gradient(135deg, #7c3aed, #6d28d9)" : "#1e1e1e",
+                  color: codeInput.trim() && !codeLoading ? "#fff" : "#444",
+                  fontSize: 14,
+                  fontWeight: "600",
+                  cursor: codeInput.trim() && !codeLoading ? "pointer" : "not-allowed",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                {codeLoading ? "確認中..." : "入る"}
+              </button>
+            </div>
+
+            <p style={{ color: "#333", fontSize: 10, marginTop: 20, lineHeight: 1.6 }}>
+              コードをお持ちでない方は<br />
+              X (@yumesakuapp) までDMください
+            </p>
+          </div>
+        </div>
+        <style>{`* { box-sizing: border-box; margin: 0; padding: 0; } body { background: #0d0d0d; }`}</style>
+      </>
+    );
+  }
+
+  // ===== ユメサク本体（既存画面）=====
   return (
     <>
       <Head>
@@ -101,7 +216,6 @@ export default function Home() {
 
       <div style={{ height: "100vh", background: "#0d0d0d", display: "flex", flexDirection: "column", fontFamily: "-apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif" }}>
 
-        {/* Header */}
         <header style={{ padding: "12px 20px", borderBottom: "1px solid #1e1e1e", background: "#0d0d0d", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg, #7c3aed, #db2777)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>✦</div>
@@ -115,7 +229,6 @@ export default function Home() {
           </button>
         </header>
 
-        {/* Tab bar (アプリ生成後に表示) */}
         {generatedApp && (
           <div style={{ display: "flex", borderBottom: "1px solid #1e1e1e", background: "#0d0d0d", flexShrink: 0 }}>
             {["chat", "preview"].map((t) => (
@@ -127,10 +240,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* Main content */}
         <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
 
-          {/* Chat panel */}
           <div style={{ display: tab === "chat" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }}>
             <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px" }}>
               <div style={{ maxWidth: 600, margin: "0 auto" }}>
@@ -171,7 +282,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Input */}
             <div style={{ padding: "12px 16px 24px", borderTop: "1px solid #1e1e1e", background: "#0d0d0d", flexShrink: 0 }}>
               <div style={{ maxWidth: 600, margin: "0 auto" }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "flex-end", background: "#161616", borderRadius: 18, border: "1px solid #2a2a2a", padding: "10px 10px 10px 16px" }}>
@@ -192,10 +302,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Preview panel */}
           {tab === "preview" && generatedApp && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-              {/* Preview toolbar */}
               <div style={{ padding: "10px 16px", borderBottom: "1px solid #1e1e1e", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#0d0d0d", flexShrink: 0 }}>
                 <div style={{ color: "#888", fontSize: 12, fontFamily: "monospace" }}>
                   ✦ {appTitle}
@@ -205,7 +313,6 @@ export default function Home() {
                   {downloaded ? "✓ ダウンロード完了" : "⬇ ダウンロード"}
                 </button>
               </div>
-              {/* iframe preview */}
               <iframe
                 ref={iframeRef}
                 srcDoc={generatedApp}
