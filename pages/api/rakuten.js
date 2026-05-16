@@ -1,10 +1,9 @@
 // pages/api/rakuten.js
-// 楽天市場 商品検索API（シンプル版）
+// 楽天市場 商品検索API（新認証方式対応版）
 
 export default async function handler(req, res) {
   const { keyword } = req.query;
 
-  // キーワードチェック
   if (!keyword) {
     return res.status(400).json({
       error: 'キーワードを指定してください',
@@ -12,10 +11,8 @@ export default async function handler(req, res) {
     });
   }
 
-  // 楽天APIのURL
   const RAKUTEN_API = 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601';
   
-  // パラメータ組み立て
   const params = new URLSearchParams({
     applicationId: process.env.RAKUTEN_APPLICATION_ID,
     affiliateId: process.env.RAKUTEN_AFFILIATE_ID,
@@ -25,19 +22,24 @@ export default async function handler(req, res) {
   });
 
   try {
-    // 楽天APIを呼び出す
-    const response = await fetch(`${RAKUTEN_API}?${params.toString()}`);
+    // 新方式：認証ヘッダー付きでリクエスト
+    const response = await fetch(`${RAKUTEN_API}?${params.toString()}`, {
+      headers: {
+        'Authorization': `ESA ${process.env.RAKUTEN_ACCESS_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
     const data = await response.json();
 
-    // エラーチェック
     if (data.error) {
       return res.status(400).json({
         error: '楽天APIエラー',
-        detail: data.error_description || data.error
+        detail: data.error_description || data.error,
+        hint: 'アクセスキーが正しく設定されているか確認してください'
       });
     }
 
-    // 必要な情報だけ整形して返す
     const items = (data.Items || []).map(({ Item }) => ({
       name: Item.itemName,
       price: Item.itemPrice,
