@@ -83,7 +83,7 @@ JSONのみ出力（説明文・マークダウン不要）：
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
       }),
