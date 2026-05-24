@@ -1,30 +1,28 @@
 // pages/api/ranking.js
-// Yahoo!ショッピング ランキングAPI（V3売れ筋ソート版）
+// Yahoo!ショッピング ランキングAPI（キーワード×売れ筋ソート版）
 
 export default async function handler(req, res) {
   const { category } = req.query;
 
-  // ガジェット×クリエイター向けカテゴリID
-  const categoryMap = {
-    'gadget': '2502',      // 家電・AV・カメラ
-    'pc': '2504',          // パソコン・周辺機器
-    'audio': '36807',      // オーディオ
-    'mobile': '36811',     // スマートフォン・携帯電話
-    'camera': '23976',     // カメラ・ビデオカメラ
-    'all': '2502',
+  // ガジェット×クリエイター向けキーワード
+  const categoryQueries = {
+    'gadget': 'ガジェット 在宅',
+    'pc': 'パソコン 周辺機器',
+    'audio': 'ワイヤレスイヤホン ヘッドホン',
+    'mobile': 'スマホ アクセサリー',
+    'camera': 'カメラ 周辺機器',
+    'all': 'ガジェット',
   };
 
-  const categoryId = categoryMap[category] || categoryMap['all'];
+  const query = categoryQueries[category] || categoryQueries['all'];
 
-  // V3 itemSearch を売れ筋ソートで使用
   const YAHOO_API = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch';
   
   const params = new URLSearchParams({
     appid: process.env.YAHOO_APP_ID,
-    category_id: categoryId,
+    query: query,
     sort: '-score',  // 売れ筋・人気順
-    results: 20,
-    in_stock: 'true'  // 在庫ありのみ
+    results: 20
   });
 
   try {
@@ -52,6 +50,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       category: category || 'all',
+      query: query,
       count: items.length,
       items: items
     });
