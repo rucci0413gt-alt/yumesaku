@@ -1,17 +1,17 @@
 // pages/api/ranking.js
-// Yahoo!ショッピング ランキングAPI（キーワード×売れ筋ソート版）
+// Yahoo!ショッピング ランキングAPI（ガジェット×クリエイター特化版）
 
 export default async function handler(req, res) {
   const { category } = req.query;
 
-  // ガジェット×クリエイター向けキーワード
+  // ガジェット×クリエイター向け精度UPキーワード
   const categoryQueries = {
-    'gadget': 'ガジェット 在宅',
-    'pc': 'パソコン 周辺機器',
-    'audio': 'ワイヤレスイヤホン ヘッドホン',
-    'mobile': 'スマホ アクセサリー',
-    'camera': 'カメラ 周辺機器',
-    'all': 'ガジェット',
+    'gadget': 'デスク周り 在宅ワーク 便利グッズ',
+    'pc': 'パソコン スタンド アクセサリー',
+    'audio': 'ワイヤレスイヤホン ノイズキャンセリング',
+    'mobile': 'スマホスタンド モバイルバッテリー',
+    'camera': 'ウェブカメラ 配信機材',
+    'all': '在宅ワーク ガジェット',
   };
 
   const query = categoryQueries[category] || categoryQueries['all'];
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   const params = new URLSearchParams({
     appid: process.env.YAHOO_APP_ID,
     query: query,
-    sort: '-score',  // 売れ筋・人気順
+    sort: '-score',
     results: 20
   });
 
