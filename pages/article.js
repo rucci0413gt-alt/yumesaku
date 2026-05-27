@@ -1,7 +1,7 @@
 // pages/article.js
-// AI記事自動生成ページ
+// AI記事自動生成 - Apple級デザイン統一版
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 export default function Article() {
@@ -9,6 +9,11 @@ export default function Article() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const categories = ['ガジェット', 'PC周辺', 'オーディオ', 'スマホ', 'カメラ'];
 
@@ -40,82 +45,81 @@ export default function Article() {
   return (
     <>
       <Head>
-        <title>AI厳選レビュー | ユメサク</title>
+        <title>記事作成 - yumesaku</title>
         <meta name="description" content="AIが厳選する、在宅ワーカー・クリエイター向けガジェット最新レビュー" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
       </Head>
 
-      <div style={styles.container}>
-        <header style={styles.header}>
-          <div style={styles.headerInner}>
-            <a href="/" style={styles.logo}>ユメサク</a>
-            <nav style={styles.nav}>
-              <a href="/shop" style={styles.navLink}>Shop</a>
-              <a href="/ranking" style={styles.navLink}>Ranking</a>
-              <a href="/article" style={{...styles.navLink, fontWeight: '700'}}>Article</a>
+      <div className="container">
+        <header className="header">
+          <div className="header-inner">
+            <a href="/" className="logo">yumesaku</a>
+            <nav className="nav">
+              <a href="/shop" className="nav-link">Shop</a>
+              <a href="/ranking" className="nav-link">Ranking</a>
+              <a href="/article" className="nav-link active">Article</a>
             </nav>
           </div>
         </header>
 
-        <section style={styles.hero}>
-          <p style={styles.eyebrow}>AI EDITORIAL</p>
-          <h1 style={styles.heroTitle}>
-            AIが選ぶ、<br />今読むべきレビュー。
-          </h1>
-          <p style={styles.heroSubtitle}>
-            Yahoo!ショッピングの売れ筋を<br />
-            AIが瞬時に編集記事化
-          </p>
+        <section className="hero">
+          <div className="hero-inner">
+            <h1 className={`hero-title fade-in-up ${mounted ? 'visible' : ''}`} style={{animationDelay: '0s'}}>
+              今、読んでおきたいレビュー。
+            </h1>
+            <p className={`hero-subtitle fade-in-up ${mounted ? 'visible' : ''}`} style={{animationDelay: '0.1s'}}>
+              Yahoo!ショッピングの売れ筋を<br />
+              AIが瞬時に編集記事化
+            </p>
 
-          <div style={styles.controls}>
-            <div style={styles.tags}>
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  style={{
-                    ...styles.tag,
-                    background: category === cat ? '#1A1A1A' : '#FFFFFF',
-                    color: category === cat ? '#FFFFFF' : '#1A1A1A',
-                  }}
-                >
-                  {cat}
-                </button>
-              ))}
+            <div className={`controls fade-in-up ${mounted ? 'visible' : ''}`} style={{animationDelay: '0.2s'}}>
+              <div className="tabs">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setCategory(cat)}
+                    className={`tab ${category === cat ? 'active' : ''}`}
+                    disabled={loading}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={generateArticle}
+                disabled={loading}
+                className="generate-btn"
+              >
+                {loading ? '生成中...' : '記事作成'}
+              </button>
             </div>
 
-            <button
-              onClick={generateArticle}
-              disabled={loading}
-              style={{
-                ...styles.generateBtn,
-                opacity: loading ? 0.5 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {loading ? '生成中...' : '✨ AIで記事を生成'}
-            </button>
+            {error && <p className="error">{error}</p>}
           </div>
-
-          {error && <p style={styles.error}>{error}</p>}
         </section>
 
         {loading && (
-          <div style={styles.loading}>
-            <div style={styles.spinner}></div>
-            <p style={styles.loadingText}>AIが記事を執筆中...（30秒ほど）</p>
+          <div className="loading">
+            <div className="spinner-wrap">
+              <div className="spinner-ring"></div>
+              <div className="spinner-dot"></div>
+            </div>
+            <p className="loading-text">AIが記事を執筆中...</p>
+            <p className="loading-sub">30秒～1分ほどかかります</p>
           </div>
         )}
 
         {data && (
-          <article style={styles.article}>
-            <div style={styles.articleHeader}>
-              <p style={styles.articleCategory}>{data.category}</p>
-              <h2 style={styles.articleTitle}>{data.article.title}</h2>
-              <p style={styles.articleIntro}>{data.article.intro}</p>
+          <article className="article">
+            <div className="article-header fade-in-up visible">
+              <p className="article-category">{data.category}</p>
+              <h2 className="article-title">{data.article.title}</h2>
+              <p className="article-intro">{data.article.intro}</p>
             </div>
 
-            <div style={styles.reviewList}>
+            <div className="review-list">
               {data.article.reviews?.map((review, i) => {
                 const item = data.items[i];
                 if (!item) return null;
@@ -125,32 +129,29 @@ export default function Article() {
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={styles.reviewCard}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-4px)';
-                      e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.08)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
-                    }}
+                    className="review-card fade-in-up visible"
+                    style={{ animationDelay: `${i * 0.1}s` }}
                   >
-                    <div style={styles.rankBadge}>{review.rank || i + 1}位</div>
+                    <div className={`rank-badge ${i < 3 ? `rank-${i + 1}` : ''}`}>
+                      {review.rank || i + 1}位
+                    </div>
+                    
                     {item.image && (
-                      <div style={styles.reviewImageWrap}>
-                        <img src={item.image} alt={item.name} style={styles.reviewImage} />
+                      <div className="review-image-wrap">
+                        <img src={item.image} alt={item.name} className="review-image" />
                       </div>
                     )}
-                    <div style={styles.reviewContent}>
-                      <h3 style={styles.reviewHeadline}>{review.headline}</h3>
-                      <p style={styles.reviewProduct}>{item.name}</p>
-                      <p style={styles.reviewDesc}>{review.description}</p>
-                      <div style={styles.reviewMeta}>
-                        <span style={styles.recommendFor}>👤 {review.recommendFor}</span>
+                    
+                    <div className="review-content">
+                      <h3 className="review-headline">{review.headline}</h3>
+                      <p className="review-product">{item.name}</p>
+                      <p className="review-desc">{review.description}</p>
+                      <div className="review-meta">
+                        <span className="recommend-for">👤 {review.recommendFor}</span>
                       </div>
-                      <div style={styles.reviewFooter}>
-                        <p style={styles.reviewPrice}>¥{item.price.toLocaleString()}</p>
-                        <span style={styles.checkBtn}>商品を見る →</span>
+                      <div className="review-footer">
+                        <p className="review-price">¥{item.price.toLocaleString()}</p>
+                        <span className="check-btn">商品を見る →</span>
                       </div>
                     </div>
                   </a>
@@ -158,19 +159,19 @@ export default function Article() {
               })}
             </div>
 
-            <div style={styles.conclusion}>
-              <h3 style={styles.conclusionTitle}>まとめ</h3>
-              <p style={styles.conclusionText}>{data.article.conclusion}</p>
+            <div className="conclusion fade-in-up visible" style={{ animationDelay: '0.6s' }}>
+              <h3 className="conclusion-title">まとめ</h3>
+              <p className="conclusion-text">{data.article.conclusion}</p>
             </div>
 
-            <p style={styles.disclaimer}>
+            <p className="disclaimer">
               ※本記事はAIにより自動生成されました｜価格・在庫は変動する場合があります
             </p>
           </article>
         )}
 
-        <footer style={styles.footer}>
-          <p style={styles.footerText}>© 2026 ユメサク. AIで仕事を加速する人のために.</p>
+        <footer className="footer">
+          <p className="footer-text">© 2026 yumesaku. AIで仕事を加速する人のために.</p>
         </footer>
       </div>
 
@@ -178,132 +179,446 @@ export default function Article() {
         body {
           margin: 0;
           padding: 0;
-          font-family: 'Noto Sans JP', 'Inter', -apple-system, sans-serif;
+          font-family: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
           background: #FAFAFA;
           color: #1A1A1A;
           -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
         * { box-sizing: border-box; }
+
+        .container { min-height: 100vh; background: #FAFAFA; }
+
+        /* === Header === */
+        .header {
+          border-bottom: 1px solid #E8E8E8;
+          background: rgba(250,250,250,0.85);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          position: sticky;
+          top: 0;
+          z-index: 100;
+        }
+        .header-inner {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: clamp(14px, 2.5vw, 20px) clamp(20px, 4vw, 32px);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .logo {
+          font-family: 'Inter', sans-serif;
+          font-size: clamp(18px, 3vw, 22px);
+          font-weight: 700;
+          color: #1A1A1A;
+          text-decoration: none;
+          letter-spacing: -0.02em;
+          transition: opacity 0.3s;
+        }
+        .logo:hover { opacity: 0.7; }
+        .nav { display: flex; gap: clamp(16px, 3vw, 32px); }
+        .nav-link {
+          font-size: clamp(13px, 1.5vw, 14px);
+          color: #1A1A1A;
+          text-decoration: none;
+          font-weight: 500;
+          position: relative;
+          transition: color 0.3s;
+        }
+        .nav-link.active { font-weight: 700; }
+        .nav-link::after {
+          content: '';
+          position: absolute;
+          bottom: -4px;
+          left: 0;
+          width: 0;
+          height: 2px;
+          background: #1A1A1A;
+          transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-link:hover::after,
+        .nav-link.active::after { width: 100%; }
+
+        /* === Hero === */
+        .hero {
+          padding: clamp(48px, 10vw, 96px) clamp(20px, 4vw, 32px) clamp(32px, 6vw, 48px);
+          text-align: center;
+        }
+        .hero-inner { max-width: 760px; margin: 0 auto; }
+        .hero-title {
+          font-size: clamp(30px, 7vw, 56px);
+          font-weight: 700;
+          color: #1A1A1A;
+          line-height: 1.25;
+          letter-spacing: -0.03em;
+          margin: 0 0 clamp(16px, 3vw, 24px) 0;
+        }
+        .hero-subtitle {
+          font-size: clamp(14px, 2vw, 17px);
+          color: #666;
+          line-height: 1.75;
+          margin: 0 0 clamp(28px, 5vw, 44px) 0;
+        }
+
+        /* === Controls === */
+        .controls {
+          display: flex;
+          flex-direction: column;
+          gap: clamp(16px, 3vw, 24px);
+          align-items: center;
+        }
+        .tabs {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          justify-content: center;
+        }
+        .tab {
+          padding: clamp(8px, 1.5vw, 10px) clamp(16px, 3vw, 22px);
+          font-size: clamp(12px, 1.5vw, 14px);
+          font-weight: 500;
+          color: #1A1A1A;
+          background: #FFFFFF;
+          border: 1px solid #E8E8E8;
+          border-radius: 100px;
+          cursor: pointer;
+          font-family: inherit;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tab:hover:not(:disabled) {
+          background: #F5F5F5;
+          transform: translateY(-1px);
+        }
+        .tab.active {
+          background: #1A1A1A;
+          color: #FFFFFF;
+          border-color: #1A1A1A;
+        }
+        .tab:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .generate-btn {
+          padding: clamp(14px, 2.5vw, 18px) clamp(32px, 6vw, 56px);
+          font-size: clamp(14px, 1.8vw, 16px);
+          font-weight: 600;
+          color: #FFFFFF;
+          background: #1A1A1A;
+          border: none;
+          border-radius: 12px;
+          cursor: pointer;
+          font-family: inherit;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .generate-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 28px rgba(26,26,26,0.25);
+        }
+        .generate-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        /* === Loading === */
+        .loading {
+          text-align: center;
+          padding: clamp(60px, 10vw, 120px) 20px;
+        }
+        .spinner-wrap {
+          position: relative;
+          width: 56px;
+          height: 56px;
+          margin: 0 auto;
+        }
+        .spinner-ring {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          border: 2px solid #E8E8E8;
+          border-top-color: #1A1A1A;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+        .spinner-dot {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 10px;
+          height: 10px;
+          margin-top: -5px;
+          margin-left: -5px;
+          background: #1A1A1A;
+          border-radius: 50%;
+          animation: pulse 1.2s ease-in-out infinite;
+        }
+        .loading-text {
+          margin-top: 24px;
+          color: #1A1A1A;
+          font-size: 16px;
+          font-weight: 500;
+        }
+        .loading-sub {
+          margin-top: 4px;
+          color: #999;
+          font-size: 13px;
+        }
+
+        /* === Article === */
+        .article {
+          max-width: 760px;
+          margin: clamp(20px, 4vw, 40px) auto;
+          padding: 0 clamp(20px, 4vw, 32px) clamp(60px, 10vw, 96px);
+        }
+        .article-header {
+          text-align: center;
+          margin-bottom: clamp(40px, 8vw, 72px);
+        }
+        .article-category {
+          font-family: 'Inter', sans-serif;
+          font-size: clamp(11px, 1.4vw, 12px);
+          color: #0066FF;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          margin: 0 0 clamp(12px, 2vw, 16px) 0;
+        }
+        .article-title {
+          font-size: clamp(26px, 5vw, 40px);
+          font-weight: 700;
+          color: #1A1A1A;
+          line-height: 1.3;
+          letter-spacing: -0.02em;
+          margin: 0 0 clamp(16px, 3vw, 24px) 0;
+        }
+        .article-intro {
+          font-size: clamp(15px, 2vw, 17px);
+          color: #444;
+          line-height: 1.85;
+          margin: 0;
+        }
+
+        /* === Review List === */
+        .review-list {
+          display: flex;
+          flex-direction: column;
+          gap: clamp(16px, 3vw, 28px);
+        }
+        .review-card {
+          background: #FFFFFF;
+          border-radius: 16px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+          text-decoration: none;
+          color: inherit;
+          overflow: hidden;
+          position: relative;
+          border: 1px solid #F0F0F0;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          display: block;
+        }
+        .review-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 16px 40px rgba(0,0,0,0.1);
+          border-color: #1A1A1A;
+        }
+        .review-card:hover .review-image {
+          transform: scale(1.04);
+        }
+        .review-card:hover .check-btn {
+          transform: translateX(4px);
+        }
+
+        /* === Rank Badge === */
+        .rank-badge {
+          position: absolute;
+          top: 16px;
+          left: 16px;
+          background: #1A1A1A;
+          color: #FFFFFF;
+          font-family: 'Inter', sans-serif;
+          font-size: clamp(11px, 1.4vw, 13px);
+          font-weight: 700;
+          padding: 6px 14px;
+          border-radius: 100px;
+          z-index: 2;
+          letter-spacing: 0.02em;
+        }
+        .rank-badge.rank-1 {
+          background: linear-gradient(135deg, #FFD700, #FFA500);
+          box-shadow: 0 4px 16px rgba(255, 165, 0, 0.4);
+        }
+        .rank-badge.rank-2 {
+          background: linear-gradient(135deg, #C0C0C0, #909090);
+          box-shadow: 0 4px 16px rgba(192, 192, 192, 0.4);
+        }
+        .rank-badge.rank-3 {
+          background: linear-gradient(135deg, #CD7F32, #8B4513);
+          color: #FFFFFF;
+          box-shadow: 0 4px 16px rgba(205, 127, 50, 0.4);
+        }
+
+        /* === Review Image === */
+        .review-image-wrap {
+          width: 100%;
+          aspect-ratio: 16/9;
+          background: #F5F5F5;
+          overflow: hidden;
+        }
+        .review-image {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          padding: clamp(16px, 3vw, 32px);
+          transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* === Review Content === */
+        .review-content {
+          padding: clamp(20px, 4vw, 32px);
+        }
+        .review-headline {
+          font-size: clamp(18px, 2.5vw, 22px);
+          font-weight: 700;
+          color: #1A1A1A;
+          margin: 0 0 8px 0;
+          letter-spacing: -0.01em;
+          line-height: 1.4;
+        }
+        .review-product {
+          font-size: clamp(12px, 1.5vw, 13px);
+          color: #999;
+          margin: 0 0 clamp(12px, 2vw, 16px) 0;
+          line-height: 1.5;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .review-desc {
+          font-size: clamp(14px, 1.8vw, 15px);
+          color: #444;
+          line-height: 1.85;
+          margin: 0 0 clamp(14px, 2.5vw, 20px) 0;
+        }
+        .review-meta {
+          margin-bottom: clamp(16px, 3vw, 24px);
+        }
+        .recommend-for {
+          display: inline-block;
+          font-size: clamp(12px, 1.5vw, 13px);
+          color: #666;
+          background: #F5F5F5;
+          padding: 6px 12px;
+          border-radius: 8px;
+        }
+        .review-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: clamp(14px, 2.5vw, 20px);
+          border-top: 1px solid #F0F0F0;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+        .review-price {
+          font-size: clamp(18px, 2.5vw, 22px);
+          font-weight: 700;
+          color: #1A1A1A;
+          margin: 0;
+          letter-spacing: -0.01em;
+        }
+        .check-btn {
+          font-size: clamp(13px, 1.6vw, 14px);
+          color: #0066FF;
+          font-weight: 600;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* === Conclusion === */
+        .conclusion {
+          margin-top: clamp(40px, 7vw, 64px);
+          padding: clamp(24px, 5vw, 40px);
+          background: #FFFFFF;
+          border-radius: 16px;
+          border: 1px solid #F0F0F0;
+        }
+        .conclusion-title {
+          font-size: clamp(16px, 2.5vw, 20px);
+          font-weight: 700;
+          margin: 0 0 clamp(12px, 2vw, 16px) 0;
+          color: #1A1A1A;
+        }
+        .conclusion-text {
+          font-size: clamp(14px, 1.8vw, 15px);
+          color: #444;
+          line-height: 1.85;
+          margin: 0;
+        }
+        .disclaimer {
+          font-size: 12px;
+          color: #999;
+          text-align: center;
+          margin-top: clamp(24px, 5vw, 40px);
+          line-height: 1.6;
+        }
+
+        .error {
+          color: #E53935;
+          margin-top: 16px;
+          font-size: 14px;
+        }
+
+        /* === Footer === */
+        .footer {
+          border-top: 1px solid #E8E8E8;
+          padding: clamp(24px, 5vw, 40px) clamp(20px, 4vw, 32px);
+          text-align: center;
+          background: #FFFFFF;
+        }
+        .footer-text {
+          font-size: 12px;
+          color: #999;
+          margin: 0;
+        }
+
+        /* === Animations === */
+        .fade-in-up {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        .fade-in-up.visible {
+          animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+          opacity: 1;
+          transform: translateY(0);
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.6; }
+        }
+
+        /* === Mobile Specific === */
+        @media (max-width: 640px) {
+          .hero-subtitle br { display: none; }
+          .nav { gap: 16px; }
+          .review-footer {
+            flex-direction: row;
+            align-items: center;
+          }
+        }
+        @media (max-width: 380px) {
+          .hero-title { font-size: 26px; }
+          .generate-btn {
+            padding: 14px 24px;
+            font-size: 14px;
+          }
         }
       `}</style>
     </>
   );
 }
-
-const styles = {
-  container: { minHeight: '100vh', background: '#FAFAFA' },
-  header: {
-    borderBottom: '1px solid #E8E8E8',
-    background: 'rgba(250,250,250,0.8)',
-    backdropFilter: 'blur(20px)',
-    position: 'sticky', top: 0, zIndex: 100,
-  },
-  headerInner: {
-    maxWidth: '1200px', margin: '0 auto',
-    padding: '20px 32px',
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-  },
-  logo: {
-    fontSize: '20px', fontWeight: '700',
-    color: '#1A1A1A', textDecoration: 'none',
-    letterSpacing: '-0.02em',
-  },
-  nav: { display: 'flex', gap: '32px' },
-  navLink: { fontSize: '14px', color: '#1A1A1A', textDecoration: 'none', fontWeight: '500' },
-  hero: { padding: '80px 32px 40px', textAlign: 'center', maxWidth: '720px', margin: '0 auto' },
-  eyebrow: {
-    fontSize: '13px', color: '#0066FF',
-    fontWeight: '600', letterSpacing: '0.1em',
-    textTransform: 'uppercase', margin: '0 0 16px 0',
-  },
-  heroTitle: {
-    fontSize: '48px', fontWeight: '700',
-    color: '#1A1A1A', lineHeight: '1.2',
-    letterSpacing: '-0.03em', margin: '0 0 20px 0',
-  },
-  heroSubtitle: { fontSize: '17px', color: '#666', lineHeight: '1.7', margin: '0 0 40px 0' },
-  controls: { display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' },
-  tags: { display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' },
-  tag: {
-    padding: '8px 18px', fontSize: '13px',
-    border: '1px solid #E8E8E8', borderRadius: '20px',
-    cursor: 'pointer', fontFamily: 'inherit',
-    transition: 'all 0.3s', fontWeight: '500',
-  },
-  generateBtn: {
-    padding: '16px 40px', fontSize: '15px', fontWeight: '600',
-    color: '#FFFFFF', background: '#1A1A1A',
-    border: 'none', borderRadius: '12px',
-    fontFamily: 'inherit', transition: 'all 0.3s',
-  },
-  error: { color: '#E53935', marginTop: '16px', fontSize: '14px' },
-  loading: { textAlign: 'center', padding: '80px 0' },
-  spinner: {
-    width: '32px', height: '32px',
-    border: '2px solid #E8E8E8', borderTopColor: '#1A1A1A',
-    borderRadius: '50%', margin: '0 auto',
-    animation: 'spin 0.8s linear infinite',
-  },
-  loadingText: { marginTop: '16px', color: '#999', fontSize: '14px' },
-  article: { maxWidth: '760px', margin: '40px auto', padding: '0 32px 80px' },
-  articleHeader: { textAlign: 'center', marginBottom: '60px' },
-  articleCategory: {
-    fontSize: '12px', color: '#0066FF',
-    fontWeight: '600', letterSpacing: '0.1em',
-    textTransform: 'uppercase', margin: '0 0 12px 0',
-  },
-  articleTitle: {
-    fontSize: '36px', fontWeight: '700',
-    color: '#1A1A1A', lineHeight: '1.3',
-    letterSpacing: '-0.02em', margin: '0 0 24px 0',
-  },
-  articleIntro: { fontSize: '17px', color: '#444', lineHeight: '1.8', margin: 0 },
-  reviewList: { display: 'flex', flexDirection: 'column', gap: '24px' },
-  reviewCard: {
-    background: '#FFFFFF', borderRadius: '12px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-    textDecoration: 'none', color: 'inherit',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    overflow: 'hidden', position: 'relative',
-    border: '1px solid #F0F0F0',
-  },
-  rankBadge: {
-    position: 'absolute', top: '16px', left: '16px',
-    background: '#1A1A1A', color: '#FFFFFF',
-    fontSize: '12px', fontWeight: '700',
-    padding: '4px 10px', borderRadius: '20px', zIndex: 1,
-  },
-  reviewImageWrap: { width: '100%', aspectRatio: '16/9', background: '#F5F5F5' },
-  reviewImage: { width: '100%', height: '100%', objectFit: 'contain', padding: '24px' },
-  reviewContent: { padding: '24px 28px' },
-  reviewHeadline: {
-    fontSize: '20px', fontWeight: '700',
-    color: '#1A1A1A', margin: '0 0 8px 0',
-    letterSpacing: '-0.01em',
-  },
-  reviewProduct: {
-    fontSize: '13px', color: '#999',
-    margin: '0 0 16px 0', lineHeight: '1.5',
-    display: '-webkit-box', WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical', overflow: 'hidden',
-  },
-  reviewDesc: { fontSize: '14px', color: '#444', lineHeight: '1.7', margin: '0 0 16px 0' },
-  reviewMeta: { marginBottom: '20px' },
-  recommendFor: { fontSize: '13px', color: '#666', background: '#F5F5F5', padding: '4px 10px', borderRadius: '6px' },
-  reviewFooter: {
-    display: 'flex', justifyContent: 'space-between',
-    alignItems: 'center', paddingTop: '16px',
-    borderTop: '1px solid #F0F0F0',
-  },
-  reviewPrice: { fontSize: '20px', fontWeight: '700', color: '#1A1A1A', margin: 0 },
-  checkBtn: { fontSize: '14px', color: '#0066FF', fontWeight: '600' },
-  conclusion: { marginTop: '60px', padding: '32px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #F0F0F0' },
-  conclusionTitle: { fontSize: '18px', fontWeight: '700', margin: '0 0 16px 0' },
-  conclusionText: { fontSize: '15px', color: '#444', lineHeight: '1.8', margin: 0 },
-  disclaimer: { fontSize: '12px', color: '#999', textAlign: 'center', marginTop: '32px' },
-  footer: { borderTop: '1px solid #E8E8E8', padding: '40px 32px', textAlign: 'center', background: '#FFFFFF' },
-  footerText: { fontSize: '12px', color: '#999', margin: 0 },
-};
