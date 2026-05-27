@@ -206,7 +206,12 @@ export default function Shop() {
           -moz-osx-font-smoothing: grayscale;
         }
         * { box-sizing: border-box; }
-
+/* 日本語の改行を文節単位にする */
+h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title, .result-title {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+}
         .container {
           min-height: 100vh;
           background: #FAFAFA;
