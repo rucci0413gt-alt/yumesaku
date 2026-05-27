@@ -244,7 +244,7 @@ export default function Home() {
           <section className="hero">
             <div className="hero-inner">
               <h1 className={`hero-title fade-in-up ${mounted ? 'visible' : ''}`} style={{animationDelay: '0s'}}>
-                夢が、サクッと形になる。
+                夢をサクッとカタチに。
               </h1>
               <p className={`hero-subtitle fade-in-up ${mounted ? 'visible' : ''}`} style={{animationDelay: '0.1s'}}>
                 日本語で話すだけで、<br />
