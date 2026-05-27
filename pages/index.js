@@ -1,5 +1,5 @@
 // pages/index.js
-// ユメサク本体 - Apple級ハイブリッドデザイン
+// ユメサク本体 - Apple級ハイブリッド（スマホ完全対応版）
 
 import { useState, useRef, useEffect } from "react";
 import Head from "next/head";
@@ -15,7 +15,6 @@ export default function Home() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const correctCode = process.env.NEXT_PUBLIC_ACCESS_CODE;
-      // 環境変数が空または未設定なら認証スキップ
       if (!correctCode || correctCode === '') {
         setAuthenticated(true);
         setAuthChecking(false);
@@ -45,7 +44,6 @@ export default function Home() {
     }, 400);
   };
 
-  // ===== 既存のstate =====
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -62,17 +60,9 @@ export default function Home() {
   const bottomRef = useRef(null);
   const iframeRef = useRef(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  useEffect(() => {
-    if (generatedApp) setTab("preview");
-  }, [generatedApp]);
+  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => { if (generatedApp) setTab("preview"); }, [generatedApp]);
 
   const hasUserInteraction = messages.length > 1;
 
@@ -138,15 +128,8 @@ export default function Home() {
     setTab("chat");
   };
 
-  const examples = [
-    "家計簿アプリ",
-    "ToDoリスト",
-    "誕生日管理",
-    "読書記録",
-    "習慣トラッカー",
-  ];
+  const examples = ["家計簿", "ToDoリスト", "誕生日管理", "読書記録", "習慣トラッカー"];
 
-  // ===== 認証チェック中 =====
   if (authChecking) {
     return (
       <div style={{ height: "100vh", background: "#FAFAFA", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -155,7 +138,6 @@ export default function Home() {
     );
   }
 
-  // ===== アクセスコード入力画面 =====
   if (!authenticated) {
     return (
       <>
@@ -168,7 +150,6 @@ export default function Home() {
           <div className="auth-inner">
             <h1 className="auth-logo">yumesaku</h1>
             <p className="auth-subtitle">モニター限定公開中</p>
-
             <div className="auth-card">
               <p className="auth-label">アクセスコードを入力</p>
               <input
@@ -189,7 +170,6 @@ export default function Home() {
                 {codeLoading ? "確認中..." : "入る"}
               </button>
             </div>
-
             <p className="auth-help">
               コードをお持ちでない方は<br />
               X (@yumesakuapp) までDMください
@@ -218,7 +198,6 @@ export default function Home() {
     );
   }
 
-  // ===== メイン =====
   return (
     <>
       <Head>
@@ -244,7 +223,7 @@ export default function Home() {
           <section className="hero">
             <div className="hero-inner">
               <h1 className={`hero-title fade-in-up ${mounted ? 'visible' : ''}`} style={{animationDelay: '0s'}}>
-                夢をサクッとカタチに。
+                夢がカタチに。
               </h1>
               <p className={`hero-subtitle fade-in-up ${mounted ? 'visible' : ''}`} style={{animationDelay: '0.1s'}}>
                 日本語で話すだけで、<br />
@@ -283,9 +262,7 @@ export default function Home() {
                       const isUser = msg.role === "user";
                       return (
                         <div key={i} className={`msg-row ${isUser ? 'user' : 'assistant'}`}>
-                          {!isUser && (
-                            <div className="msg-name">yumesaku</div>
-                          )}
+                          {!isUser && <div className="msg-name">yumesaku</div>}
                           <div className={`msg-bubble ${isUser ? 'user' : 'assistant'}`}>
                             {msg.content}
                           </div>
@@ -328,16 +305,18 @@ export default function Home() {
                   </div>
                   {!hasUserInteraction && (
                     <div className="examples">
-                      <span className="examples-label">例えば：</span>
-                      {examples.map((ex, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setInput(ex)}
-                          className="example-tag"
-                        >
-                          {ex}
-                        </button>
-                      ))}
+                      <span className="examples-label">例えば</span>
+                      <div className="example-tags">
+                        {examples.map((ex, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setInput(ex)}
+                            className="example-tag"
+                          >
+                            {ex}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                   <div className="input-hint">
@@ -373,7 +352,7 @@ export default function Home() {
         {!hasUserInteraction && !generatedApp && (
           <section className="features fade-in-up visible" style={{animationDelay: '0.4s'}}>
             <div className="features-inner">
-              <h2 className="features-title">ユメサクをもっと使い倒す。</h2>
+              <h2 className="features-title">ユメサクを、もっと使い倒す。</h2>
               <div className="features-grid">
                 <a href="/shop" className="feature-card">
                   <div className="feature-eyebrow">Shop</div>
@@ -384,7 +363,7 @@ export default function Home() {
                 <a href="/ranking" className="feature-card">
                   <div className="feature-eyebrow">Ranking</div>
                   <h3 className="feature-name">知る</h3>
-                  <p className="feature-desc">今、売れている人気アイテムランキング</p>
+                  <p className="feature-desc">今、売れている人気アイテムを一覧で</p>
                   <span className="feature-arrow">→</span>
                 </a>
                 <a href="/article" className="feature-card">
@@ -399,7 +378,7 @@ export default function Home() {
         )}
 
         <footer className="footer">
-          <p className="footer-text">© 2026 yumesaku. 夢を、サクッと形に。</p>
+          <p className="footer-text">© 2026 yumesaku. 夢を、カタチに。</p>
         </footer>
       </div>
 
@@ -436,14 +415,14 @@ export default function Home() {
         .header-inner {
           max-width: 1200px;
           margin: 0 auto;
-          padding: clamp(14px, 2.5vw, 20px) clamp(20px, 4vw, 32px);
+          padding: clamp(12px, 2.5vw, 20px) clamp(16px, 4vw, 32px);
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
         .logo {
           font-family: 'Inter', sans-serif;
-          font-size: clamp(18px, 3vw, 22px);
+          font-size: clamp(17px, 3vw, 22px);
           font-weight: 700;
           color: #1A1A1A;
           text-decoration: none;
@@ -451,9 +430,9 @@ export default function Home() {
           transition: opacity 0.3s;
         }
         .logo:hover { opacity: 0.7; }
-        .nav { display: flex; gap: clamp(16px, 3vw, 32px); }
+        .nav { display: flex; gap: clamp(14px, 3vw, 32px); }
         .nav-link {
-          font-size: clamp(13px, 1.5vw, 14px);
+          font-size: clamp(12px, 1.5vw, 14px);
           color: #1A1A1A;
           text-decoration: none;
           font-weight: 500;
@@ -474,26 +453,25 @@ export default function Home() {
 
         /* === Hero === */
         .hero {
-          padding: clamp(56px, 12vw, 120px) clamp(20px, 4vw, 32px) clamp(32px, 6vw, 48px);
+          padding: clamp(48px, 10vw, 120px) clamp(16px, 4vw, 32px) clamp(24px, 5vw, 48px);
           text-align: center;
         }
         .hero-inner { max-width: 760px; margin: 0 auto; }
         .hero-title {
-          font-size: clamp(32px, 8vw, 68px);
+          font-size: clamp(34px, 9vw, 72px);
           font-weight: 700;
           color: #1A1A1A;
-          line-height: 1.2;
+          line-height: 1.15;
           letter-spacing: -0.03em;
-          margin: 0 0 clamp(16px, 3vw, 24px) 0;
+          margin: 0 0 clamp(14px, 3vw, 24px) 0;
         }
         .hero-subtitle {
-          font-size: clamp(15px, 2vw, 19px);
+          font-size: clamp(14px, 2vw, 19px);
           color: #666;
           line-height: 1.75;
           margin: 0;
         }
 
-        /* === Main === */
         .main { flex: 1; }
         .main.compact { padding-top: 0; }
 
@@ -502,19 +480,19 @@ export default function Home() {
           border-bottom: 1px solid #E8E8E8;
           background: #FFFFFF;
           position: sticky;
-          top: 65px;
+          top: 57px;
           z-index: 50;
         }
         .tabs-inner {
           max-width: 760px;
           margin: 0 auto;
-          padding: 0 clamp(16px, 4vw, 32px);
+          padding: 0 clamp(12px, 4vw, 32px);
           display: flex;
           align-items: center;
           gap: 4px;
         }
         .tab-btn {
-          padding: 14px 20px;
+          padding: 14px 18px;
           background: transparent;
           border: none;
           border-bottom: 2px solid transparent;
@@ -532,28 +510,29 @@ export default function Home() {
         }
         .reset-btn {
           margin-left: auto;
-          padding: 8px 16px;
+          padding: 7px 14px;
           background: transparent;
           border: 1px solid #E8E8E8;
           border-radius: 100px;
           color: #666;
-          font-size: 12px;
+          font-size: 11px;
           cursor: pointer;
           font-family: inherit;
           transition: all 0.3s;
+          white-space: nowrap;
         }
         .reset-btn:hover { background: #F5F5F5; border-color: #1A1A1A; color: #1A1A1A; }
 
         /* === Chat === */
         .chat-area { display: flex; flex-direction: column; }
         .messages {
-          padding: clamp(20px, 4vw, 32px) clamp(16px, 4vw, 32px);
+          padding: clamp(16px, 4vw, 32px) clamp(12px, 4vw, 32px);
         }
         .messages-inner { max-width: 760px; margin: 0 auto; }
         .msg-row {
           display: flex;
           flex-direction: column;
-          margin-bottom: 20px;
+          margin-bottom: clamp(14px, 2.5vw, 20px);
         }
         .msg-row.user { align-items: flex-end; }
         .msg-row.assistant { align-items: flex-start; }
@@ -565,8 +544,8 @@ export default function Home() {
           letter-spacing: 0.02em;
         }
         .msg-bubble {
-          max-width: 85%;
-          padding: 14px 18px;
+          max-width: 88%;
+          padding: clamp(12px, 2vw, 14px) clamp(14px, 2.5vw, 18px);
           font-size: clamp(14px, 1.8vw, 15px);
           line-height: 1.7;
           white-space: pre-wrap;
@@ -600,11 +579,11 @@ export default function Home() {
 
         /* === Input === */
         .input-area {
-          padding: clamp(16px, 3vw, 24px) clamp(16px, 4vw, 32px) clamp(24px, 5vw, 40px);
+          padding: clamp(14px, 3vw, 24px) clamp(12px, 4vw, 32px) clamp(20px, 5vw, 40px);
           background: #FAFAFA;
         }
         .input-area.hero-input {
-          padding: 0 clamp(20px, 4vw, 32px) clamp(40px, 8vw, 64px);
+          padding: 0 clamp(16px, 4vw, 32px) clamp(32px, 8vw, 64px);
         }
         .input-inner { max-width: 760px; margin: 0 auto; }
         .input-box {
@@ -614,7 +593,7 @@ export default function Home() {
           background: #FFFFFF;
           border-radius: 16px;
           border: 1px solid #E8E8E8;
-          padding: 8px 8px 8px 20px;
+          padding: 6px 6px 6px clamp(14px, 3vw, 20px);
           transition: all 0.3s;
         }
         .input-box:focus-within {
@@ -627,18 +606,19 @@ export default function Home() {
           border: none;
           outline: none;
           color: #1A1A1A;
-          font-size: clamp(15px, 1.8vw, 16px);
+          font-size: 16px;
           resize: none;
           font-family: inherit;
           line-height: 1.6;
           max-height: 120px;
           overflow-y: auto;
-          padding: 12px 0;
+          padding: 10px 0;
+          min-width: 0;
         }
         .input::placeholder { color: #999; }
         .send-btn {
-          width: 42px;
-          height: 42px;
+          width: clamp(36px, 6vw, 42px);
+          height: clamp(36px, 6vw, 42px);
           border-radius: 12px;
           background: #1A1A1A;
           border: none;
@@ -662,16 +642,21 @@ export default function Home() {
           box-shadow: 0 8px 20px rgba(26,26,26,0.2);
         }
         .examples {
-          margin-top: 16px;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          align-items: center;
-          justify-content: center;
+          margin-top: clamp(14px, 2.5vw, 20px);
+          text-align: center;
         }
         .examples-label {
-          font-size: 12px;
+          display: block;
+          font-size: 11px;
           color: #999;
+          margin-bottom: 8px;
+          letter-spacing: 0.05em;
+        }
+        .example-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          justify-content: center;
         }
         .example-tag {
           padding: 6px 14px;
@@ -692,7 +677,7 @@ export default function Home() {
         }
         .input-hint {
           text-align: center;
-          margin-top: 12px;
+          margin-top: clamp(10px, 2vw, 14px);
           font-size: 11px;
           color: #CCC;
         }
@@ -701,25 +686,29 @@ export default function Home() {
         .preview-area {
           max-width: 1200px;
           margin: 0 auto;
-          padding: clamp(16px, 3vw, 24px) clamp(16px, 4vw, 32px) clamp(40px, 8vw, 64px);
+          padding: clamp(12px, 3vw, 24px) clamp(12px, 4vw, 32px) clamp(32px, 8vw, 64px);
         }
         .preview-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 16px 20px;
+          padding: clamp(12px, 2vw, 16px) clamp(14px, 3vw, 20px);
           background: #FFFFFF;
           border: 1px solid #E8E8E8;
           border-radius: 12px 12px 0 0;
           border-bottom: none;
+          gap: 12px;
         }
         .preview-title {
           font-size: 13px;
           color: #666;
           font-family: 'Inter', monospace;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .download-btn {
-          padding: 8px 18px;
+          padding: 8px 16px;
           background: #1A1A1A;
           border: none;
           border-radius: 100px;
@@ -729,13 +718,15 @@ export default function Home() {
           cursor: pointer;
           font-family: inherit;
           transition: all 0.3s;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
         .download-btn:hover { transform: translateY(-1px); }
         .download-btn.done { background: #10B981; }
         .preview-iframe {
           width: 100%;
           height: 70vh;
-          min-height: 500px;
+          min-height: 400px;
           border: 1px solid #E8E8E8;
           border-top: none;
           border-radius: 0 0 12px 12px;
@@ -744,27 +735,27 @@ export default function Home() {
 
         /* === Features === */
         .features {
-          padding: clamp(60px, 10vw, 120px) clamp(20px, 4vw, 32px);
+          padding: clamp(48px, 10vw, 120px) clamp(16px, 4vw, 32px);
         }
         .features-inner { max-width: 1100px; margin: 0 auto; }
         .features-title {
-          font-size: clamp(24px, 4vw, 36px);
+          font-size: clamp(22px, 5vw, 36px);
           font-weight: 700;
           text-align: center;
           color: #1A1A1A;
-          margin: 0 0 clamp(32px, 6vw, 56px) 0;
+          margin: 0 0 clamp(28px, 6vw, 56px) 0;
           letter-spacing: -0.02em;
         }
         .features-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: clamp(16px, 3vw, 24px);
+          grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+          gap: clamp(14px, 3vw, 24px);
         }
         .feature-card {
           background: #FFFFFF;
           border: 1px solid #F0F0F0;
           border-radius: 16px;
-          padding: clamp(24px, 4vw, 36px);
+          padding: clamp(22px, 4vw, 36px);
           text-decoration: none;
           color: inherit;
           position: relative;
@@ -782,15 +773,15 @@ export default function Home() {
         }
         .feature-eyebrow {
           font-family: 'Inter', sans-serif;
-          font-size: 12px;
+          font-size: clamp(11px, 1.4vw, 12px);
           color: #0066FF;
           font-weight: 600;
           letter-spacing: 0.12em;
           text-transform: uppercase;
-          margin-bottom: 12px;
+          margin-bottom: 10px;
         }
         .feature-name {
-          font-size: clamp(22px, 3vw, 28px);
+          font-size: clamp(20px, 3vw, 28px);
           font-weight: 700;
           color: #1A1A1A;
           margin: 0 0 12px 0;
@@ -800,7 +791,7 @@ export default function Home() {
           font-size: clamp(13px, 1.6vw, 14px);
           color: #666;
           line-height: 1.7;
-          margin: 0 0 20px 0;
+          margin: 0 0 18px 0;
         }
         .feature-arrow {
           font-size: 20px;
@@ -812,7 +803,7 @@ export default function Home() {
         /* === Footer === */
         .footer {
           border-top: 1px solid #E8E8E8;
-          padding: clamp(24px, 5vw, 40px) clamp(20px, 4vw, 32px);
+          padding: clamp(20px, 5vw, 40px) clamp(16px, 4vw, 32px);
           text-align: center;
           background: #FFFFFF;
         }
@@ -823,10 +814,7 @@ export default function Home() {
         }
 
         /* === Animations === */
-        .fade-in-up {
-          opacity: 0;
-          transform: translateY(20px);
-        }
+        .fade-in-up { opacity: 0; transform: translateY(20px); }
         .fade-in-up.visible {
           animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) backwards;
           opacity: 1;
@@ -837,21 +825,120 @@ export default function Home() {
           to { opacity: 1; transform: translateY(0); }
         }
 
-        /* === Scrollbar === */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #E0E0E0; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #BDBDBD; }
 
         /* === Mobile === */
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
+          .hero {
+            padding: 56px 20px 32px;
+          }
+          .hero-title {
+            font-size: clamp(32px, 9vw, 48px);
+            line-height: 1.2;
+          }
+          .hero-subtitle {
+            font-size: 15px;
+            line-height: 1.7;
+          }
           .hero-subtitle br { display: none; }
+          .features {
+            padding: 56px 20px;
+          }
+          .features-title {
+            font-size: 24px;
+            margin-bottom: 32px;
+          }
+          .features-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          .feature-card {
+            padding: 24px;
+          }
+          .feature-name {
+            font-size: 22px;
+          }
+        }
+        @media (max-width: 640px) {
+          .header-inner { padding: 12px 18px; }
+          .logo { font-size: 18px; }
           .nav { gap: 16px; }
-          .tabs-wrap { top: 57px; }
+          .nav-link { font-size: 13px; }
+          .hero {
+            padding: 40px 18px 28px;
+          }
+          .hero-title { 
+            font-size: 36px;
+            line-height: 1.25;
+          }
+          .hero-subtitle {
+            font-size: 14px;
+          }
+          .msg-bubble {
+            max-width: 92%;
+            font-size: 14px;
+          }
+          .input-hint {
+            font-size: 10px;
+          }
+          .examples-label {
+            font-size: 10px;
+          }
+          .example-tag {
+            font-size: 11px;
+            padding: 5px 12px;
+          }
         }
         @media (max-width: 480px) {
-          .hero-title { font-size: 30px; line-height: 1.3; }
-          .features-grid { grid-template-columns: 1fr; }
+          .header-inner { padding: 10px 16px; }
+          .logo { font-size: 17px; }
+          .nav { gap: 14px; }
+          .nav-link { font-size: 12px; }
+          .hero {
+            padding: 32px 16px 24px;
+          }
+          .hero-title { 
+            font-size: 30px;
+            line-height: 1.25;
+          }
+          .hero-subtitle {
+            font-size: 13px;
+          }
+          .input-area {
+            padding: 12px 14px 24px;
+          }
+          .input-area.hero-input {
+            padding: 0 14px 28px;
+          }
+          .messages {
+            padding: 16px 14px;
+          }
+          .features {
+            padding: 40px 16px;
+          }
+          .features-title {
+            font-size: 22px;
+          }
+          .feature-card {
+            padding: 20px;
+          }
+          .feature-name {
+            font-size: 20px;
+          }
+          .feature-desc {
+            font-size: 13px;
+          }
+        }
+        @media (max-width: 380px) {
+          .hero-title { font-size: 26px; }
+          .hero-subtitle { font-size: 12px; }
+          .nav { gap: 12px; }
+          .nav-link { font-size: 11px; }
+          .logo { font-size: 16px; }
+          .features-title { font-size: 20px; }
         }
       `}</style>
     </>
