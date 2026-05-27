@@ -1,5 +1,5 @@
 // pages/article.js
-// AI記事自動生成 - Apple級デザイン統一版
+// AI記事自動生成 - 日本語改行最適化版
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
@@ -187,6 +187,13 @@ export default function Article() {
         }
         * { box-sizing: border-box; }
 
+        /* 日本語の改行を文節単位にする */
+        h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title {
+          word-break: keep-all;
+          overflow-wrap: break-word;
+          line-break: strict;
+        }
+
         .container { min-height: 100vh; background: #FAFAFA; }
 
         /* === Header === */
@@ -247,10 +254,10 @@ export default function Article() {
         }
         .hero-inner { max-width: 760px; margin: 0 auto; }
         .hero-title {
-          font-size: clamp(30px, 7vw, 56px);
+          font-size: clamp(26px, 6vw, 52px);
           font-weight: 700;
           color: #1A1A1A;
-          line-height: 1.25;
+          line-height: 1.3;
           letter-spacing: -0.03em;
           margin: 0 0 clamp(16px, 3vw, 24px) 0;
         }
@@ -382,10 +389,10 @@ export default function Article() {
           margin: 0 0 clamp(12px, 2vw, 16px) 0;
         }
         .article-title {
-          font-size: clamp(26px, 5vw, 40px);
+          font-size: clamp(24px, 4.5vw, 38px);
           font-weight: 700;
           color: #1A1A1A;
-          line-height: 1.3;
+          line-height: 1.35;
           letter-spacing: -0.02em;
           margin: 0 0 clamp(16px, 3vw, 24px) 0;
         }
@@ -611,8 +618,16 @@ export default function Article() {
             align-items: center;
           }
         }
+        @media (max-width: 480px) {
+          .hero-title { 
+            font-size: 24px;
+            line-height: 1.4;
+          }
+        }
         @media (max-width: 380px) {
-          .hero-title { font-size: 26px; }
+          .hero-title { 
+            font-size: 22px;
+          }
           .generate-btn {
             padding: 14px 24px;
             font-size: 14px;
