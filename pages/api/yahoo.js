@@ -1,5 +1,5 @@
 // pages/api/yahoo.js
-// Yahoo!ショッピング 商品検索API
+// Yahoo!ショッピング 商品検索API（高画質版）
 
 export default async function handler(req, res) {
   const { keyword } = req.query;
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   }
 
   const YAHOO_API = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch';
-  
+
   const params = new URLSearchParams({
     appid: process.env.YAHOO_APP_ID,
     query: keyword,
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       name: item.name,
       price: item.price,
       url: item.url,
-      image: item.image?.medium || item.image?.small || '',
+      image: item.exImage?.url || item.image?.medium || item.image?.small || '',
       shop: item.seller?.name || '',
       review: item.review?.rate || 0,
       reviewCount: item.review?.count || 0,
