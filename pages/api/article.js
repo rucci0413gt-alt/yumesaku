@@ -30,17 +30,17 @@ export default async function handler(req, res) {
         sort: '-score',
       })
     );
-    
+
     if (!yahooRes.ok) {
       return res.status(500).json({ error: 'Yahoo!API失敗', status: yahooRes.status });
     }
-    
+
     const yahooData = await yahooRes.json();
     const items = (yahooData.hits || []).map(item => ({
       name: item.name,
       price: item.price,
       url: item.url,
-      image: item.image?.medium || '',
+      image: item.exImage?.url || item.image?.medium || item.image?.small || '',
       shop: item.seller?.name || '',
       review: item.review?.rate || 0,
       reviewCount: item.review?.count || 0,
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '商品なし' });
     }
 
-    const productList = items.map((item, i) => 
+    const productList = items.map((item, i) =>
       `${i + 1}. ${item.name} - ¥${item.price.toLocaleString()}`
     ).join('\n');
 
@@ -91,7 +91,7 @@ JSONのみ出力（説明文・マークダウン不要）：
 
     if (!claudeRes.ok) {
       const errorText = await claudeRes.text();
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Claude API失敗',
         status: claudeRes.status,
         detail: errorText.substring(0, 500),
@@ -100,15 +100,15 @@ JSONのみ出力（説明文・マークダウン不要）：
 
     const claudeData = await claudeRes.json();
     const text = claudeData.content?.[0]?.text || '';
-    
+
     let article;
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('JSON not found');
       article = JSON.parse(jsonMatch[0]);
     } catch (e) {
-      return res.status(500).json({ 
-        error: 'JSON解析エラー', 
+      return res.status(500).json({
+        error: 'JSON解析エラー',
         raw: text.substring(0, 500),
       });
     }
