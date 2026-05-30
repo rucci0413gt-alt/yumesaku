@@ -1,5 +1,5 @@
 // pages/api/ranking.js
-// Yahoo!ショッピング ランキングAPI（ガジェット×クリエイター特化版）
+// Yahoo!ショッピング ランキングAPI（ガジェット×クリエイター特化・高画質版）
 
 export default async function handler(req, res) {
   const { category } = req.query;
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   const query = categoryQueries[category] || categoryQueries['all'];
 
   const YAHOO_API = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch';
-  
+
   const params = new URLSearchParams({
     appid: process.env.YAHOO_APP_ID,
     query: query,
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       name: item.name,
       price: item.price,
       url: item.url,
-      image: item.image?.medium || item.image?.small || '',
+      image: item.exImage?.url || item.image?.medium || item.image?.small || '',
       shop: item.seller?.name || '',
       review: item.review?.rate || 0,
       reviewCount: item.review?.count || 0,
