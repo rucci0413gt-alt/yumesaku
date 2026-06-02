@@ -1,66 +1,62 @@
-// pages/api/rakuten.js
-// 楽天市場 商品検索API（新認証方式対応版）
+// pages/api/ranking.js
+// Yahoo!ショッピング ランキングAPI（カテゴリ日本語対応版）
 
 export default async function handler(req, res) {
-  const { keyword } = req.query;
+const { category } = req.query;
 
-  if (!keyword) {
-    return res.status(400).json({
-      error: 'キーワードを指定してください',
-      example: '/api/rakuten?keyword=iPhone'
-    });
-  }
+const categoryQueries = {
+'ガジェット': 'デスク周り 在宅ワーク 便利グッズ',
+'PC周辺': 'パソコン スタンド アクセサリー',
+'オーディオ': 'ワイヤレスイヤホン ノイズキャンセリング',
+'スマホ': 'スマホスタンド モバイルバッテリー',
+'カメラ': 'ウェブカメラ 配信機材',
+};
 
-  const RAKUTEN_API = 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601';
-  
-  const params = new URLSearchParams({
-    applicationId: process.env.RAKUTEN_APPLICATION_ID,
-    affiliateId: process.env.RAKUTEN_AFFILIATE_ID,
-    keyword: keyword,
-    hits: 10,
-    format: 'json'
-  });
+const query = categoryQueries[category] || 'デスク周り 在宅ワーク ガジェット';
 
-  try {
-    // 新方式：認証ヘッダー付きでリクエスト
-    const response = await fetch(`${RAKUTEN_API}?${params.toString()}`, {
-      headers: {
-        'Authorization': `ESA ${process.env.RAKUTEN_ACCESS_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    const data = await response.json();
+const YAHOO_API = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch';
 
-    if (data.error) {
-      return res.status(400).json({
-        error: '楽天APIエラー',
-        detail: data.error_description || data.error,
-        hint: 'アクセスキーが正しく設定されているか確認してください'
-      });
-    }
+const params = new URLSearchParams({
+appid: process.env.YAHOO_APP_ID,
+query: query,
+sort: '-score',
+results: 20
+});
 
-    const items = (data.Items || []).map(({ Item }) => ({
-      name: Item.itemName,
-      price: Item.itemPrice,
-      url: Item.affiliateUrl || Item.itemUrl,
-      image: Item.mediumImageUrls?.[0]?.imageUrl || '',
-      shop: Item.shopName,
-      review: Item.reviewAverage,
-      reviewCount: Item.reviewCount
-    }));
+try {
+const response = await fetch(`${YAHOO_API}?${params.toString()}`);
+const data = await response.json();
 
-    return res.status(200).json({
-      success: true,
-      count: items.length,
-      keyword: keyword,
-      items: items
-    });
+if (data.Error || data.error) {
+return res.status(400).json({
+error: 'Yahoo!ランキングAPIエラー',
+detail: data.Error?.Message || data.error_description || JSON.stringify(data.Error || data.error)
+});
+}
 
-  } catch (error) {
-    return res.status(500).json({
-      error: 'サーバーエラー',
-      message: error.message
-    });
-  }
+const items = (data.hits || []).map((item, index) => ({
+rank: index + 1,
+name: item.name,
+price: item.price,
+url: item.url,
+image: item.exImage?.url || item.image?.medium || item.image?.small || '',
+shop: item.seller?.name || '',
+review: item.review?.rate || 0,
+reviewCount: item.review?.count || 0,
+}));
+
+return res.status(200).json({
+success: true,
+category: category || 'ガジェット',
+query: query,
+count: items.length,
+items: items
+});
+
+} catch (error) {
+return res.status(500).json({
+error: 'サーバーエラー',
+message: error.message
+});
+}
 }
