@@ -1,11 +1,10 @@
 // pages/article.js
-// AI記事自動生成 - MyLink自動生成 + URL変換ツール版
+// AI記事自動生成 - URL指定商品記事生成版
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 export default function Article() {
-// ===== アクセスコード認証 =====
 const [authenticated, setAuthenticated] = useState(false);
 const [authChecking, setAuthChecking] = useState(true);
 const [codeInput, setCodeInput] = useState('');
@@ -51,16 +50,132 @@ const [mounted, setMounted] = useState(false);
 const [copiedIndex, setCopiedIndex] = useState(null);
 const [copiedAll, setCopiedAll] = useState(false);
 
-// URL変換ツール用
+// URL指定記事生成用
 const [urlInput, setUrlInput] = useState('');
-const [convertedUrl, setConvertedUrl] = useState('');
-const [copiedUrl, setCopiedUrl] = useState(false);
+const [urlItem, setUrlItem] = useState(null);
+const [urlLoading, setUrlLoading] = useState(false);
+const [urlError, setUrlError] = useState('');
+const [urlXText, setUrlXText] = useState('');
+const [copiedUrlText, setCopiedUrlText] = useState(false);
 
-useEffect(() => {
-setMounted(true);
-}, []);
+useEffect(() => { setMounted(true); }, []);
 
 const categories = ['ガジェット', 'PC周辺', 'オーディオ', 'スマホ', 'カメラ'];
+
+const generateMyLink = (url) => {
+const encoded = encodeURIComponent(url);
+return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=3771004&pid=892616093&vc_url=${encoded}`;
+};
+
+// URLから商品名を抽出してYahoo!APIで検索
+const handleUrlGenerate = async () => {
+if (!urlInput.trim()) return;
+setUrlLoading(true);
+setUrlError('');
+setUrlItem(null);
+setUrlXText('');
+
+try {
+// URLから商品コードを抽出してキーワード化
+const urlObj = new URL(urlInput.trim());
+const pathParts = urlObj.pathname.split('/').filter(Boolean);
+const keyword = pathParts[pathParts.length - 1]
+.replace(/\.html$/, '')
+.replace(/[-_]/g, ' ');
+
+// Yahoo!APIで商品検索
+const res = await fetch(`/api/yahoo?keyword=${encodeURIComponent(keyword)}`);
+const result = await res.json();
+
+if (!result.success || result.items.length === 0) {
+// キーワード検索失敗時はショップIDで再検索
+const shopId = pathParts[0];
+const res2 = await fetch(`/api/yahoo?keyword=${encodeURIComponent(shopId)}`);
+const result2 = await res2.json();
+if (!result2.success || result2.items.length === 0) {
+setUrlError('商品情報を取得できませんでした。URLを確認してください。');
+setUrlLoading(false);
+return;
+}
+processItem(result2.items[0]);
+return;
+}
+
+processItem(result.items[0]);
+
+} catch (e) {
+setUrlError('URLの形式が正しくありません。Yahoo!ショッピングのURLを貼り付けてください。');
+} finally {
+setUrlLoading(false);
+}
+};
+
+const processItem = async (item) => {
+const mylink = generateMyLink(urlInput.trim());
+
+// Claude APIで紹介文生成
+try {
+const res = await fetch('/api/chat', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+messages: [{
+role: 'user',
+content: `以下の商品のX（Twitter）投稿文を作成してください。
+商品名：${item.name}
+価格：¥${item.price.toLocaleString()}
+
+条件：
+・140文字以内
+・在宅ワーカー・クリエイター向け
+・商品の魅力を一言で表すキャッチコピー
+・おすすめの人物像（👤）
+・価格（💰）
+・「詳しくはコメント欄👇」で締める
+・絵文字を適度に使う
+
+JSON形式で返してください：
+{"headline": "キャッチコピー", "desc": "説明40文字以内", "recommend": "おすすめの人"}`
+}]
+}),
+});
+const chatData = await res.json();
+let headline = item.name.slice(0, 20);
+let desc = '';
+let recommend = '在宅ワーカー・クリエイター';
+
+if (chatData.message) {
+try {
+const clean = chatData.message.replace(/```json|```/g, '').trim();
+const parsed = JSON.parse(clean);
+headline = parsed.headline || headline;
+desc = parsed.desc || desc;
+recommend = parsed.recommend || recommend;
+} catch (e) {}
+}
+
+const xText = `【ガジェット】\n${headline}\n\n${desc}…\n\n👤 ${recommend}\n💰 ¥${item.price.toLocaleString()}\n\n詳しくはコメント欄👇\n\n▼商品リンク\n${mylink}`;
+
+setUrlItem({ ...item, mylink });
+setUrlXText(xText);
+
+} catch (e) {
+// Claude API失敗時はシンプルなテキストを生成
+const xText = `【ガジェット】\n${item.name.slice(0, 30)}\n\n在宅ワーク・クリエイター向けの人気商品！\n\n👤 在宅ワーカー・クリエイター\n💰 ¥${item.price.toLocaleString()}\n\n詳しくはコメント欄👇\n\n▼商品リンク\n${mylink}`;
+setUrlItem({ ...item, mylink });
+setUrlXText(xText);
+}
+};
+
+const copyUrlText = async () => {
+try {
+await navigator.clipboard.writeText(urlXText);
+setCopiedUrlText(true);
+setTimeout(() => setCopiedUrlText(false), 2000);
+} catch (e) {
+alert('コピーできませんでした');
+}
+};
 
 const generateArticle = async () => {
 setLoading(true);
@@ -82,27 +197,6 @@ setError(result.error || '生成に失敗しました');
 setError('通信エラーが発生しました');
 } finally {
 setLoading(false);
-}
-};
-
-const generateMyLink = (url) => {
-const encoded = encodeURIComponent(url);
-return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=3771004&pid=892616093&vc_url=${encoded}`;
-};
-
-const handleConvert = () => {
-if (!urlInput.trim()) return;
-const mylink = generateMyLink(urlInput.trim());
-setConvertedUrl(mylink);
-};
-
-const copyConvertedUrl = async () => {
-try {
-await navigator.clipboard.writeText(convertedUrl);
-setCopiedUrl(true);
-setTimeout(() => setCopiedUrl(false), 2000);
-} catch (e) {
-alert('コピーできませんでした');
 }
 };
 
@@ -239,16 +333,10 @@ return (
 Yahoo!ショッピングの売れ筋を<br />
 AIが瞬時に編集記事化
 </p>
-
 <div className={`controls fade-in-up ${mounted ? 'visible' : ''}`} style={{animationDelay: '0.2s'}}>
 <div className="tabs">
 {categories.map(cat => (
-<button
-key={cat}
-onClick={() => setCategory(cat)}
-className={`tab ${category === cat ? 'active' : ''}`}
-disabled={loading}
->
+<button key={cat} onClick={() => setCategory(cat)} className={`tab ${category === cat ? 'active' : ''}`} disabled={loading}>
 {cat}
 </button>
 ))}
@@ -257,39 +345,64 @@ disabled={loading}
 {loading ? '生成中...' : '記事作成'}
 </button>
 </div>
-
 {error && <p className="error">{error}</p>}
 </div>
 </section>
 
-{/* URL変換ツール */}
+{/* URL指定記事生成 */}
 <section className="convert-section">
 <div className="convert-inner">
-<p className="convert-title">🔗 任意の商品URLをMyLinkに変換</p>
-<p className="convert-desc">Yahoo!ショッピングで見つけた商品のURLを貼り付けるだけ</p>
+<p className="convert-title">🎯 商品URLから記事＋MyLink生成</p>
+<p className="convert-desc">Yahoo!ショッピングで選んだ商品のURLを貼るだけ！AIが記事とMyLinkを自動作成</p>
 <div className="convert-box">
 <input
 type="text"
 value={urlInput}
 onChange={(e) => setUrlInput(e.target.value)}
-onKeyDown={(e) => e.key === 'Enter' && handleConvert()}
+onKeyDown={(e) => e.key === 'Enter' && handleUrlGenerate()}
 placeholder="https://store.shopping.yahoo.co.jp/..."
 className="convert-input"
 />
-<button onClick={handleConvert} className="convert-btn">
-変換
+<button onClick={handleUrlGenerate} disabled={urlLoading || !urlInput.trim()} className="convert-btn">
+{urlLoading ? '生成中...' : '生成'}
 </button>
 </div>
-{convertedUrl && (
-<div className="converted-result">
-<p className="converted-label">✅ MyLink生成完了！</p>
-<p className="converted-url">{convertedUrl}</p>
+
+{urlLoading && (
+<div className="url-loading">
+<div className="mini-spinner"></div>
+<span>商品情報を取得中...</span>
+</div>
+)}
+
+{urlError && <p className="url-error">{urlError}</p>}
+
+{urlItem && (
+<div className="url-result">
+{urlItem.image && (
+<div className="url-image-wrap">
+<img src={urlItem.image} alt={urlItem.name} className="url-image" />
+</div>
+)}
+<div className="url-info">
+<p className="url-product-name">{urlItem.name}</p>
+<p className="url-price">¥{urlItem.price.toLocaleString()}</p>
+</div>
+<div className="url-xtext-box">
+<div className="url-xtext-header">
+<span className="url-xtext-label">𝕏 投稿用テキスト（MyLink入り）</span>
 <button
-className={`copy-converted-btn ${copiedUrl ? 'copied' : ''}`}
-onClick={copyConvertedUrl}
+className={`copy-btn ${copiedUrlText ? 'copied' : ''}`}
+onClick={copyUrlText}
 >
-{copiedUrl ? '✓ コピーしました！' : '📋 このURLをコピー'}
+{copiedUrlText ? '✓ コピーしました' : 'コピー'}
 </button>
+</div>
+<pre className="url-xtext">{urlXText}</pre>
+</div>
+<a href={urlItem.mylink} target="_blank" rel="noopener noreferrer" className="url-check-btn">
+商品を確認する →
+</a>
 </div>
 )}
 </div>
@@ -313,7 +426,6 @@ onClick={copyConvertedUrl}
 <h2 className="article-title">{data.article.title}</h2>
 <p className="article-intro">{data.article.intro}</p>
 </div>
-
 <div className="review-list">
 {data.article.reviews?.map((review, i) => {
 const item = data.items[i];
@@ -321,16 +433,8 @@ if (!item) return null;
 const xText = generateXText(review, item);
 return (
 <div key={i} className="review-wrapper">
-<a
-href={generateMyLink(item.url)}
-target="_blank"
-rel="noopener noreferrer"
-className="review-card fade-in-up visible"
-style={{ animationDelay: `${i * 0.1}s` }}
->
-<div className={`rank-badge ${i < 3 ? `rank-${i + 1}` : ''}`}>
-{review.rank || i + 1}位
-</div>
+<a href={generateMyLink(item.url)} target="_blank" rel="noopener noreferrer" className="review-card fade-in-up visible" style={{ animationDelay: `${i * 0.1}s` }}>
+<div className={`rank-badge ${i < 3 ? `rank-${i + 1}` : ''}`}>{review.rank || i + 1}位</div>
 {item.image && (
 <div className="review-image-wrap">
 <img src={item.image} alt={item.name} className="review-image" />
@@ -349,14 +453,10 @@ style={{ animationDelay: `${i * 0.1}s` }}
 </div>
 </div>
 </a>
-
 <div className="x-copy-box">
 <div className="x-copy-header">
 <span className="x-copy-label">𝕏 投稿用テキスト（MyLink入り）</span>
-<button
-className={`copy-btn ${copiedIndex === i ? 'copied' : ''}`}
-onClick={() => copyToClipboard(xText, i)}
->
+<button className={`copy-btn ${copiedIndex === i ? 'copied' : ''}`} onClick={() => copyToClipboard(xText, i)}>
 {copiedIndex === i ? '✓ コピーしました' : 'コピー'}
 </button>
 </div>
@@ -366,24 +466,16 @@ onClick={() => copyToClipboard(xText, i)}
 );
 })}
 </div>
-
 <div className="conclusion fade-in-up visible" style={{ animationDelay: '0.6s' }}>
 <h3 className="conclusion-title">まとめ</h3>
 <p className="conclusion-text">{data.article.conclusion}</p>
 </div>
-
 <div className="full-copy-wrap">
-<button
-className={`full-copy-btn ${copiedAll ? 'copied' : ''}`}
-onClick={() => copyToClipboard(generateFullText(), 'all')}
->
+<button className={`full-copy-btn ${copiedAll ? 'copied' : ''}`} onClick={() => copyToClipboard(generateFullText(), 'all')}>
 {copiedAll ? '✓ コピーしました！' : '📋 記事をまるごとコピー'}
 </button>
 </div>
-
-<p className="disclaimer">
-※本記事はAIにより自動生成されました｜価格・在庫は変動する場合があります
-</p>
+<p className="disclaimer">※本記事はAIにより自動生成されました｜価格・在庫は変動する場合があります</p>
 </article>
 )}
 
@@ -420,22 +512,32 @@ h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title
 .generate-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(26,26,26,0.25); }
 .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* === URL変換ツール === */
+/* === URL指定記事生成 === */
 .convert-section { max-width: 760px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 32px) clamp(32px, 6vw, 48px); }
 .convert-inner { background: #F0FFF4; border: 1px solid #BBF7D0; border-radius: 16px; padding: clamp(20px, 4vw, 32px); }
 .convert-title { font-size: clamp(15px, 2vw, 17px); font-weight: 700; color: #1A1A1A; margin: 0 0 8px 0; }
-.convert-desc { font-size: 13px; color: #666; margin: 0 0 16px 0; }
+.convert-desc { font-size: 13px; color: #666; margin: 0 0 16px 0; line-height: 1.6; }
 .convert-box { display: flex; gap: 8px; }
 .convert-input { flex: 1; padding: 12px 16px; font-size: 14px; border: 1px solid #E8E8E8; border-radius: 10px; outline: none; background: #FFFFFF; color: #1A1A1A; font-family: inherit; transition: all 0.3s; min-width: 0; }
 .convert-input:focus { border-color: #1A1A1A; box-shadow: 0 0 0 4px rgba(26,26,26,0.05); }
 .convert-btn { padding: 12px 20px; font-size: 14px; font-weight: 600; color: #FFFFFF; background: #1A1A1A; border: none; border-radius: 10px; cursor: pointer; font-family: inherit; transition: all 0.3s; white-space: nowrap; }
-.convert-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(26,26,26,0.2); }
-.converted-result { margin-top: 16px; background: #FFFFFF; border: 1px solid #BBF7D0; border-radius: 10px; padding: 16px; }
-.converted-label { font-size: 13px; font-weight: 700; color: #16A34A; margin: 0 0 8px 0; }
-.converted-url { font-size: 11px; color: #666; word-break: break-all; margin: 0 0 12px 0; line-height: 1.6; background: #F5F5F5; padding: 8px; border-radius: 6px; }
-.copy-converted-btn { width: 100%; padding: 10px; font-size: 13px; font-weight: 600; color: #FFFFFF; background: #16A34A; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; transition: all 0.3s; }
-.copy-converted-btn.copied { background: #22C55E; }
-.copy-converted-btn:hover { opacity: 0.9; }
+.convert-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.convert-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(26,26,26,0.2); }
+.url-loading { display: flex; align-items: center; gap: 10px; margin-top: 16px; color: #666; font-size: 13px; }
+.mini-spinner { width: 18px; height: 18px; border: 2px solid #E8E8E8; border-top-color: #1A1A1A; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+.url-error { color: #E53935; font-size: 13px; margin-top: 12px; }
+.url-result { margin-top: 16px; background: #FFFFFF; border: 1px solid #BBF7D0; border-radius: 12px; overflow: hidden; }
+.url-image-wrap { width: 100%; aspect-ratio: 16/9; background: #F5F5F5; overflow: hidden; }
+.url-image { width: 100%; height: 100%; object-fit: contain; padding: 16px; }
+.url-info { padding: 16px 16px 0; }
+.url-product-name { font-size: 13px; color: #666; margin: 0 0 6px 0; line-height: 1.5; }
+.url-price { font-size: 20px; font-weight: 700; color: #1A1A1A; margin: 0; }
+.url-xtext-box { margin: 16px; background: #F8F9FF; border: 1px solid #E0E7FF; border-radius: 10px; padding: 14px; }
+.url-xtext-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.url-xtext-label { font-size: 12px; font-weight: 700; color: #5B6AD0; }
+.url-xtext { font-family: 'Noto Sans JP', sans-serif; font-size: 12px; color: #333; line-height: 1.8; margin: 0; white-space: pre-wrap; word-break: break-all; background: #FFFFFF; border: 1px solid #E8E8E8; border-radius: 8px; padding: 12px; }
+.url-check-btn { display: block; margin: 0 16px 16px; padding: 12px; text-align: center; background: #1A1A1A; color: #FFFFFF; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600; transition: all 0.3s; }
+.url-check-btn:hover { opacity: 0.8; }
 
 .loading { text-align: center; padding: clamp(60px, 10vw, 120px) 20px; }
 .spinner-wrap { position: relative; width: 56px; height: 56px; margin: 0 auto; }
