@@ -1,5 +1,5 @@
 // pages/api/hawkeye.js
-// 🦅 鷹の目エージェント - URL紐付け修正版
+// 🦅 鷹眼 - URL紐付け修正版
 export const config = { maxDuration: 60 };
 
 const GENRE_KEYWORDS = {
@@ -60,7 +60,7 @@ const list = products.map((p, i) =>
 `商品番号${i}: ${p.name} / ¥${p.price} / ★${p.review}(${p.reviewCount}件) / キーワード:${p.keyword}`
 ).join('\n');
 
-const prompt = `あなたは「鷹の目」エージェント。エンジニア・技術系在宅ワーカーが欲しがる商品を見抜くプロです。
+const prompt = `あなたは「鷹眼」エージェント。エンジニア・技術系在宅ワーカーが欲しがる商品を見抜くプロです。
 
 以下は今人気の商品リストです：
 ${list}
