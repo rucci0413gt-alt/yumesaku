@@ -1,5 +1,5 @@
 // pages/hawkeye.js
-// 🦅 鷹の目エージェント - ハッシュタグ提案追加版
+// 🦅 鷹の目エージェント - メール送信ボタン追加版
 import { useState } from 'react';
 import Head from 'next/head';
 
@@ -9,9 +9,12 @@ const [data, setData] = useState(null);
 const [error, setError] = useState('');
 const [copied, setCopied] = useState(null);
 const [copiedTag, setCopiedTag] = useState(null);
+const [mailSending, setMailSending] = useState(false);
+const [mailSent, setMailSent] = useState(false);
+const [mailError, setMailError] = useState('');
 
 const run = async () => {
-setLoading(true); setError(''); setData(null);
+setLoading(true); setError(''); setData(null); setMailSent(false);
 try {
 const res = await fetch('/api/hawkeye', {
 method: 'POST',
@@ -25,6 +28,37 @@ else setError(result.error || 'リサーチに失敗しました');
 setError('通信エラーが発生しました');
 } finally {
 setLoading(false);
+}
+};
+
+const sendMail = async () => {
+if (!data) return;
+setMailSending(true); setMailError(''); setMailSent(false);
+try {
+const text = [
+`🦅 鷹の目レポート`,
+``,
+`📈 次に来そう：${data.nextTrend || 'なし'}`,
+`🎁 抱き合わせ：${data.bundle || 'なし'}`,
+``,
+`【今日の鉄板ピック】`,
+...data.recommendations.map((p, i) =>
+`${i+1}. ${p.name}\n   💡 ${p.reason}\n   ¥${p.price?.toLocaleString?.() || p.price}\n   URL: ${p.url}`
+),
+].join('\n');
+
+const res = await fetch('/api/send-hawkeye-mail', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ result: text }),
+});
+const json = await res.json();
+if (json.ok) setMailSent(true);
+else setMailError('送信失敗しました。もう一度お試しください。');
+} catch (e) {
+setMailError('通信エラーが発生しました');
+} finally {
+setMailSending(false);
 }
 };
 
@@ -44,7 +78,6 @@ setTimeout(() => setCopiedTag(null), 2000);
 } catch (e) { alert('コピーできませんでした'); }
 };
 
-// ジャンルに合わせたハッシュタグセット
 const hashtagSets = [
 ['#エンジニア', '#ガジェット', '#在宅ワーク', '#テレワーク', '#作業効率化'],
 ['#プログラマー', '#デスク環境', '#リモートワーク', '#ガジェット好き', '#仕事効率化'],
@@ -53,7 +86,6 @@ const hashtagSets = [
 ['#デスクツアー', '#作業環境', '#ガジェットレビュー', '#テレワーク生活', '#エンジニア必見'],
 ];
 
-// 毎回ランダムに3セット提案
 const getRandomTags = () => {
 const shuffled = [...hashtagSets].sort(() => Math.random() - 0.5);
 return shuffled.slice(0, 3);
@@ -93,7 +125,6 @@ return (
 </div>
 </section>
 
-{/* ハッシュタグ提案（常時表示） */}
 <section className="hashtag-section">
 <div className="hashtag-inner">
 <p className="hashtag-title"># 今日のおすすめハッシュタグ</p>
@@ -168,6 +199,19 @@ onClick={() => copyTag(tags.join(' '), i)}
 </div>
 ))}
 </div>
+
+{/* メール送信ボタン */}
+<div className="mail-section">
+<button
+className={`mail-btn ${mailSent ? 'sent' : ''}`}
+onClick={sendMail}
+disabled={mailSending || mailSent}
+>
+{mailSent ? '✅ Gmailに送信しました！' : mailSending ? '送信中...' : '📧 結果をGmailに送る'}
+</button>
+{mailError && <p className="mail-error">{mailError}</p>}
+</div>
+
 <p className="hint">※ URLをコピー → Articleページの「商品URLから記事＋MyLink生成」に貼り付け</p>
 </main>
 )}
@@ -196,8 +240,6 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .run-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 12px 28px rgba(26,26,26,0.25); }
 .run-btn:disabled { opacity:.5; cursor:not-allowed; }
 .error { color:#E53935; margin-top:16px; font-size:14px; }
-
-/* === ハッシュタグセクション === */
 .hashtag-section { max-width:760px; margin:0 auto; padding:0 clamp(20px,4vw,32px) clamp(32px,6vw,48px); }
 .hashtag-inner { background:#FFFBEB; border:1px solid #FDE68A; border-radius:16px; padding:clamp(20px,4vw,28px); }
 .hashtag-title { font-size:clamp(15px,2vw,17px); font-weight:700; color:#1A1A1A; margin:0 0 8px; }
@@ -209,7 +251,6 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .hashtag-copy-btn { padding:8px 16px; font-size:12px; font-weight:600; color:#FFFFFF; background:#1A1A1A; border:none; border-radius:8px; cursor:pointer; font-family:inherit; transition:all .3s; white-space:nowrap; flex-shrink:0; }
 .hashtag-copy-btn.copied { background:#22C55E; }
 .hashtag-copy-btn:hover { opacity:0.85; }
-
 .loading { text-align:center; padding:clamp(60px,10vw,120px) 20px; }
 .spinner { width:48px; height:48px; margin:0 auto; border:3px solid #E8E8E8; border-top-color:#1A1A1A; border-radius:50%; animation:spin .8s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
@@ -237,6 +278,12 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .copy-btn.copied { background:#22C55E; }
 .copy-btn:hover { opacity:.85; }
 .article-link { text-align:center; font-size:13px; color:#0066FF; font-weight:600; text-decoration:none; padding:6px; }
+.mail-section { text-align:center; margin-top:clamp(32px,5vw,48px); }
+.mail-btn { padding:clamp(14px,2.5vw,18px) clamp(32px,6vw,56px); font-size:clamp(15px,1.8vw,17px); font-weight:600; color:#fff; background:#0066FF; border:none; border-radius:12px; cursor:pointer; font-family:inherit; transition:all .3s; }
+.mail-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 12px 28px rgba(0,102,255,0.3); }
+.mail-btn:disabled { opacity:.5; cursor:not-allowed; }
+.mail-btn.sent { background:#22C55E; }
+.mail-error { color:#E53935; margin-top:12px; font-size:14px; }
 .hint { text-align:center; font-size:12px; color:#999; margin-top:clamp(24px,4vw,40px); }
 .footer { border-top:1px solid #E8E8E8; padding:clamp(24px,5vw,40px); text-align:center; background:#fff; }
 .footer-text { font-size:12px; color:#999; margin:0; }
