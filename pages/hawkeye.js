@@ -1,5 +1,6 @@
 // pages/hawkeye.js
-// 🦅 鷹の目エージェント - メール送信ボタン追加版
+// 🦅 鷹眼エージェント - Jina AI競合リサーチ追加版
+
 import { useState } from 'react';
 import Head from 'next/head';
 
@@ -12,6 +13,13 @@ const [copiedTag, setCopiedTag] = useState(null);
 const [mailSending, setMailSending] = useState(false);
 const [mailSent, setMailSent] = useState(false);
 const [mailError, setMailError] = useState('');
+
+// Jina AI競合リサーチ用
+const [jinaUrl, setJinaUrl] = useState('');
+const [jinaLoading, setJinaLoading] = useState(false);
+const [jinaResult, setJinaResult] = useState(null);
+const [jinaError, setJinaError] = useState('');
+const [copiedJina, setCopiedJina] = useState(false);
 
 const run = async () => {
 setLoading(true); setError(''); setData(null); setMailSent(false);
@@ -31,19 +39,43 @@ setLoading(false);
 }
 };
 
+// Jina AIで競合投稿を分析
+const analyzeWithJina = async () => {
+if (!jinaUrl.trim()) return;
+setJinaLoading(true);
+setJinaError('');
+setJinaResult(null);
+
+try {
+const jinaFetchUrl = `https://r.jina.ai/${jinaUrl.trim()}`;
+const res = await fetch('/api/jina-analyze', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ url: jinaFetchUrl }),
+});
+const result = await res.json();
+if (result.success) setJinaResult(result);
+else setJinaError(result.error || '取得に失敗しました');
+} catch (e) {
+setJinaError('通信エラーが発生しました');
+} finally {
+setJinaLoading(false);
+}
+};
+
 const sendMail = async () => {
 if (!data) return;
 setMailSending(true); setMailError(''); setMailSent(false);
 try {
 const text = [
-`🦅 鷹の目レポート`,
+`🦅 鷹眼レポート`,
 ``,
 `📈 次に来そう：${data.nextTrend || 'なし'}`,
 `🎁 抱き合わせ：${data.bundle || 'なし'}`,
 ``,
 `【今日の鉄板ピック】`,
 ...data.recommendations.map((p, i) =>
-`${i+1}. ${p.name}\n   💡 ${p.reason}\n   ¥${p.price?.toLocaleString?.() || p.price}\n   URL: ${p.url}`
+`${i+1}. ${p.name}\n 💡 ${p.reason}\n ¥${p.price?.toLocaleString?.() || p.price}\n URL: ${p.url}`
 ),
 ].join('\n');
 
@@ -96,7 +128,7 @@ const [tagSets] = useState(() => getRandomTags());
 return (
 <>
 <Head>
-<title>鷹の目 - yumesaku</title>
+<title>鷹眼 - yumesaku</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
 </Head>
@@ -115,7 +147,7 @@ return (
 
 <section className="hero">
 <div className="hero-inner">
-<p className="eyebrow">🦅 鷹の目エージェント</p>
+<p className="eyebrow">🦅 鷹眼エージェント</p>
 <h1 className="hero-title">エンジニアが、欲しがる。</h1>
 <p className="hero-subtitle">人気の鉄板商品・次に来る商品・抱き合わせを<br />AIが瞬時に見抜く。</p>
 <button onClick={run} disabled={loading} className="run-btn">
@@ -125,6 +157,7 @@ return (
 </div>
 </section>
 
+{/* ハッシュタグセクション */}
 <section className="hashtag-section">
 <div className="hashtag-inner">
 <p className="hashtag-title"># 今日のおすすめハッシュタグ</p>
@@ -149,10 +182,75 @@ onClick={() => copyTag(tags.join(' '), i)}
 </div>
 </section>
 
+{/* Jina AI競合リサーチ */}
+<section className="jina-section">
+<div className="jina-inner">
+<p className="jina-title">🔍 競合投稿リサーチ（Jina AI）</p>
+<p className="jina-desc">競合アカウントのX・Threads・インスタの投稿URLを貼るだけ！<br />AIがバズりパターンを分析します</p>
+<div className="jina-box">
+<input
+type="text"
+value={jinaUrl}
+onChange={e => setJinaUrl(e.target.value)}
+onKeyDown={e => e.key === 'Enter' && analyzeWithJina()}
+placeholder="https://x.com/○○/status/○○○"
+className="jina-input"
+/>
+<button
+onClick={analyzeWithJina}
+disabled={jinaLoading || !jinaUrl.trim()}
+className="jina-btn"
+>
+{jinaLoading ? '分析中...' : '分析'}
+</button>
+</div>
+
+{jinaLoading && (
+<div className="jina-loading">
+<div className="mini-spinner"></div>
+<span>投稿を取得・分析中...</span>
+</div>
+)}
+
+{jinaError && <p className="jina-error">{jinaError}</p>}
+
+{jinaResult && (
+<div className="jina-result">
+<div className="jina-result-card">
+<p className="jina-result-label">🏆 バズりパターン</p>
+<p className="jina-result-text">{jinaResult.buzzPattern}</p>
+</div>
+<div className="jina-result-card">
+<p className="jina-result-label">📦 紹介商品・ジャンル</p>
+<p className="jina-result-text">{jinaResult.products}</p>
+</div>
+<div className="jina-result-card">
+<p className="jina-result-label">💡 ユメサクへの応用</p>
+<p className="jina-result-text">{jinaResult.application}</p>
+</div>
+<div className="jina-hook-box">
+<p className="jina-hook-label">✍️ 参考フック文章</p>
+<p className="jina-hook-text">{jinaResult.hookSample}</p>
+<button
+className={`jina-copy-btn ${copiedJina ? 'copied' : ''}`}
+onClick={async () => {
+await navigator.clipboard.writeText(jinaResult.hookSample);
+setCopiedJina(true);
+setTimeout(() => setCopiedJina(false), 2000);
+}}
+>
+{copiedJina ? '✓ コピーしました' : 'フックをコピー'}
+</button>
+</div>
+</div>
+)}
+</div>
+</section>
+
 {loading && (
 <div className="loading">
 <div className="spinner"></div>
-<p className="loading-text">鷹の目が獲物を探しています...</p>
+<p className="loading-text">鷹眼が獲物を探しています...</p>
 <p className="loading-sub">30秒〜1分ほどかかります</p>
 </div>
 )}
@@ -200,7 +298,6 @@ onClick={() => copyTag(tags.join(' '), i)}
 ))}
 </div>
 
-{/* メール送信ボタン */}
 <div className="mail-section">
 <button
 className={`mail-btn ${mailSent ? 'sent' : ''}`}
@@ -240,7 +337,9 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .run-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 12px 28px rgba(26,26,26,0.25); }
 .run-btn:disabled { opacity:.5; cursor:not-allowed; }
 .error { color:#E53935; margin-top:16px; font-size:14px; }
-.hashtag-section { max-width:760px; margin:0 auto; padding:0 clamp(20px,4vw,32px) clamp(32px,6vw,48px); }
+
+/* ハッシュタグ */
+.hashtag-section { max-width:760px; margin:0 auto; padding:0 clamp(20px,4vw,32px) clamp(24px,4vw,32px); }
 .hashtag-inner { background:#FFFBEB; border:1px solid #FDE68A; border-radius:16px; padding:clamp(20px,4vw,28px); }
 .hashtag-title { font-size:clamp(15px,2vw,17px); font-weight:700; color:#1A1A1A; margin:0 0 8px; }
 .hashtag-desc { font-size:13px; color:#666; margin:0 0 20px; line-height:1.6; }
@@ -250,7 +349,31 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .hashtag-chip { font-size:12px; color:#B45309; background:#FEF3C7; padding:4px 10px; border-radius:100px; font-weight:500; }
 .hashtag-copy-btn { padding:8px 16px; font-size:12px; font-weight:600; color:#FFFFFF; background:#1A1A1A; border:none; border-radius:8px; cursor:pointer; font-family:inherit; transition:all .3s; white-space:nowrap; flex-shrink:0; }
 .hashtag-copy-btn.copied { background:#22C55E; }
-.hashtag-copy-btn:hover { opacity:0.85; }
+
+/* Jina AI競合リサーチ */
+.jina-section { max-width:760px; margin:0 auto; padding:0 clamp(20px,4vw,32px) clamp(32px,6vw,48px); }
+.jina-inner { background:#F0F7FF; border:1px solid #BAE0FF; border-radius:16px; padding:clamp(20px,4vw,28px); }
+.jina-title { font-size:clamp(15px,2vw,17px); font-weight:700; color:#1A1A1A; margin:0 0 8px; }
+.jina-desc { font-size:13px; color:#666; margin:0 0 16px; line-height:1.6; }
+.jina-box { display:flex; gap:8px; }
+.jina-input { flex:1; padding:12px 16px; font-size:14px; border:1px solid #E8E8E8; border-radius:10px; outline:none; background:#FFFFFF; color:#1A1A1A; font-family:inherit; transition:all .3s; min-width:0; }
+.jina-input:focus { border-color:#1A1A1A; box-shadow:0 0 0 4px rgba(26,26,26,0.05); }
+.jina-btn { padding:12px 20px; font-size:14px; font-weight:600; color:#FFFFFF; background:#1A1A1A; border:none; border-radius:10px; cursor:pointer; font-family:inherit; transition:all .3s; white-space:nowrap; }
+.jina-btn:disabled { opacity:.5; cursor:not-allowed; }
+.jina-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 8px 20px rgba(26,26,26,0.2); }
+.jina-loading { display:flex; align-items:center; gap:10px; margin-top:16px; color:#666; font-size:13px; }
+.mini-spinner { width:18px; height:18px; border:2px solid #E8E8E8; border-top-color:#1A1A1A; border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0; }
+.jina-error { color:#E53935; font-size:13px; margin-top:12px; }
+.jina-result { margin-top:16px; display:flex; flex-direction:column; gap:10px; }
+.jina-result-card { background:#FFFFFF; border:1px solid #BAE0FF; border-radius:10px; padding:14px; }
+.jina-result-label { font-size:12px; font-weight:700; color:#0066FF; margin:0 0 6px; }
+.jina-result-text { font-size:13px; color:#333; line-height:1.7; margin:0; }
+.jina-hook-box { background:#FFFFFF; border:1px solid #BAE0FF; border-radius:10px; padding:14px; }
+.jina-hook-label { font-size:12px; font-weight:700; color:#0066FF; margin:0 0 8px; }
+.jina-hook-text { font-size:13px; color:#333; line-height:1.7; margin:0 0 10px; }
+.jina-copy-btn { width:100%; padding:8px; font-size:13px; font-weight:600; color:#FFFFFF; background:#1A1A1A; border:none; border-radius:8px; cursor:pointer; font-family:inherit; transition:all .3s; }
+.jina-copy-btn.copied { background:#22C55E; }
+
 .loading { text-align:center; padding:clamp(60px,10vw,120px) 20px; }
 .spinner { width:48px; height:48px; margin:0 auto; border:3px solid #E8E8E8; border-top-color:#1A1A1A; border-radius:50%; animation:spin .8s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
@@ -287,7 +410,14 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .hint { text-align:center; font-size:12px; color:#999; margin-top:clamp(24px,4vw,40px); }
 .footer { border-top:1px solid #E8E8E8; padding:clamp(24px,5vw,40px); text-align:center; background:#fff; }
 .footer-text { font-size:12px; color:#999; margin:0; }
-@media (max-width:640px) { .insights { grid-template-columns:1fr; } .hero-subtitle br { display:none; } .hashtag-set { flex-direction:column; align-items:flex-start; } .hashtag-copy-btn { width:100%; } }
+@media (max-width:640px) {
+.insights { grid-template-columns:1fr; }
+.hero-subtitle br { display:none; }
+.hashtag-set { flex-direction:column; align-items:flex-start; }
+.hashtag-copy-btn { width:100%; }
+.jina-box { flex-direction:column; }
+.jina-btn { width:100%; }
+}
 `}</style>
 </>
 );
