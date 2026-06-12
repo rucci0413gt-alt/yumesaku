@@ -1,5 +1,5 @@
 // pages/article.js
-// AI記事自動生成 - URL指定商品記事生成版（X投稿URLなし）
+// AI記事自動生成 - Threads対応版
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
@@ -48,6 +48,7 @@ const [data, setData] = useState(null);
 const [error, setError] = useState('');
 const [mounted, setMounted] = useState(false);
 const [copiedIndex, setCopiedIndex] = useState(null);
+const [copiedThreadsIndex, setCopiedThreadsIndex] = useState(null);
 const [copiedAll, setCopiedAll] = useState(false);
 
 const [urlInput, setUrlInput] = useState('');
@@ -55,7 +56,10 @@ const [urlItem, setUrlItem] = useState(null);
 const [urlLoading, setUrlLoading] = useState(false);
 const [urlError, setUrlError] = useState('');
 const [urlXText, setUrlXText] = useState('');
+const [urlThreadsText, setUrlThreadsText] = useState('');
 const [copiedUrlText, setCopiedUrlText] = useState(false);
+const [copiedUrlThreads, setCopiedUrlThreads] = useState(false);
+const [activeTab, setActiveTab] = useState('x');
 
 useEffect(() => { setMounted(true); }, []);
 
@@ -66,12 +70,34 @@ const encoded = encodeURIComponent(url);
 return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=3771004&pid=892616093&vc_url=${encoded}`;
 };
 
+const generateThreadsText = (headline, desc, recommend, price, name) => {
+return `【在宅ワーカー必見】${headline}
+
+${name}を実際に使ってみた感想をシェアします。
+
+▼ こんな人におすすめ
+${recommend}
+
+▼ 使ってみてわかったこと
+${desc}
+
+長時間作業でも快適に使えるのが一番のポイント。デスク環境を整えたい方にはぜひ試してほしい一品です。
+
+💰 価格：${price}
+
+商品リンクはコメント欄に貼っています👇
+気になる方はチェックしてみてください！
+
+#在宅ワーク #ガジェット #テレワーク #デスク環境 #作業効率化`;
+};
+
 const handleUrlGenerate = async () => {
 if (!urlInput.trim()) return;
 setUrlLoading(true);
 setUrlError('');
 setUrlItem(null);
 setUrlXText('');
+setUrlThreadsText('');
 
 try {
 const urlObj = new URL(urlInput.trim());
@@ -115,7 +141,7 @@ headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({
 messages: [{
 role: 'user',
-content: `以下の商品のX（Twitter）投稿文を作成してください。
+content: `以下の商品のSNS投稿文を作成してください。
 商品名：${item.name}
 価格：¥${item.price.toLocaleString()}
 
@@ -145,26 +171,21 @@ recommend = parsed.recommend || recommend;
 } catch (e) {}
 }
 
-// X投稿テキスト：URLなし
-const xText = `【ガジェット】\n${headline}\n\n${desc}\n\n👤 ${recommend}\n💰 ¥${item.price.toLocaleString()}\n\n詳しくはコメント欄👇`;
+const price = `¥${item.price.toLocaleString()}`;
+const xText = `【ガジェット】\n${headline}\n\n${desc}\n\n👤 ${recommend}\n💰 ${price}\n\n詳しくはコメント欄👇`;
+const threadsText = generateThreadsText(headline, desc, recommend, price, item.name);
 
 setUrlItem({ ...item, mylink });
 setUrlXText(xText);
+setUrlThreadsText(threadsText);
 
 } catch (e) {
-const xText = `【ガジェット】\n${item.name.slice(0, 30)}\n\n在宅ワーク・クリエイター向けの人気商品！\n\n👤 在宅ワーカー・クリエイター\n💰 ¥${item.price.toLocaleString()}\n\n詳しくはコメント欄👇`;
+const price = `¥${item.price.toLocaleString()}`;
+const xText = `【ガジェット】\n${item.name.slice(0, 30)}\n\n在宅ワーク・クリエイター向けの人気商品！\n\n👤 在宅ワーカー・クリエイター\n💰 ${price}\n\n詳しくはコメント欄👇`;
+const threadsText = generateThreadsText(item.name.slice(0, 20), '在宅ワーク・クリエイター向けの人気商品！', '在宅ワーカー・クリエイター', price, item.name);
 setUrlItem({ ...item, mylink });
 setUrlXText(xText);
-}
-};
-
-const copyUrlText = async () => {
-try {
-await navigator.clipboard.writeText(urlXText);
-setCopiedUrlText(true);
-setTimeout(() => setCopiedUrlText(false), 2000);
-} catch (e) {
-alert('コピーできませんでした');
+setUrlThreadsText(threadsText);
 }
 };
 
@@ -199,6 +220,14 @@ const desc = review.description ? review.description.slice(0, 40) : '';
 return `【${category}】\n${headline}\n\n${desc}\n\n👤 ${recommend}\n💰 ${price}\n\n詳しくはコメント欄👇`;
 };
 
+const generateArticleThreadsText = (review, item) => {
+const headline = review.headline || '';
+const price = item?.price ? `¥${item.price.toLocaleString()}` : '';
+const recommend = review.recommendFor || '';
+const desc = review.description || '';
+return generateThreadsText(headline, desc.slice(0, 60), recommend, price, item.name);
+};
+
 const generateFullText = () => {
 if (!data) return '';
 let text = `【${data.category}】${data.article.title}\n\n${data.article.intro}\n\n`;
@@ -227,6 +256,16 @@ setTimeout(() => setCopiedIndex(null), 2000);
 }
 } catch (e) {
 alert('コピーできませんでした。手動でコピーしてください。');
+}
+};
+
+const copyThreadsToClipboard = async (text, index) => {
+try {
+await navigator.clipboard.writeText(text);
+setCopiedThreadsIndex(index);
+setTimeout(() => setCopiedThreadsIndex(null), 2000);
+} catch (e) {
+alert('コピーできませんでした。');
 }
 };
 
@@ -262,11 +301,7 @@ autoFocus
 className={`auth-input ${codeError ? 'error' : ''}`}
 />
 {codeError && <p className="auth-error">{codeError}</p>}
-<button
-onClick={handleCodeSubmit}
-disabled={!codeInput.trim() || codeLoading}
-className="auth-button"
->
+<button onClick={handleCodeSubmit} disabled={!codeInput.trim() || codeLoading} className="auth-button">
 {codeLoading ? '確認中...' : '入る'}
 </button>
 </div>
@@ -339,11 +374,10 @@ AIが瞬時に編集記事化
 </div>
 </section>
 
-{/* URL指定記事生成 */}
 <section className="convert-section">
 <div className="convert-inner">
 <p className="convert-title">🎯 商品URLから記事＋MyLink生成</p>
-<p className="convert-desc">Yahoo!ショッピングで選んだ商品のURLを貼るだけ！AIが記事とMyLinkを自動作成</p>
+<p className="convert-desc">Yahoo!ショッピングで選んだ商品のURLを貼るだけ！X・Threads両方のテキストを自動作成</p>
 <div className="convert-box">
 <input
 type="text"
@@ -378,12 +412,33 @@ className="convert-input"
 <p className="url-product-name">{urlItem.name}</p>
 <p className="url-price">¥{urlItem.price.toLocaleString()}</p>
 </div>
+
+<div className="sns-tabs">
+<button
+className={`sns-tab ${activeTab === 'x' ? 'active' : ''}`}
+onClick={() => setActiveTab('x')}
+>
+𝕏 X投稿用
+</button>
+<button
+className={`sns-tab ${activeTab === 'threads' ? 'active' : ''}`}
+onClick={() => setActiveTab('threads')}
+>
+🧵 Threads用
+</button>
+</div>
+
+{activeTab === 'x' && (
 <div className="url-xtext-box">
 <div className="url-xtext-header">
-<span className="url-xtext-label">𝕏 投稿用テキスト</span>
+<span className="url-xtext-label">𝕏 投稿用テキスト（短文）</span>
 <button
 className={`copy-btn ${copiedUrlText ? 'copied' : ''}`}
-onClick={copyUrlText}
+onClick={async () => {
+await navigator.clipboard.writeText(urlXText);
+setCopiedUrlText(true);
+setTimeout(() => setCopiedUrlText(false), 2000);
+}}
 >
 {copiedUrlText ? '✓ コピーしました' : 'コピー'}
 </button>
@@ -391,6 +446,28 @@ onClick={copyUrlText}
 <pre className="url-xtext">{urlXText}</pre>
 <p className="url-xtext-hint">※ コメント欄にMyLinkを貼ってください</p>
 </div>
+)}
+
+{activeTab === 'threads' && (
+<div className="url-threads-box">
+<div className="url-xtext-header">
+<span className="url-threads-label">🧵 Threads用テキスト（長文）</span>
+<button
+className={`copy-btn ${copiedUrlThreads ? 'copied' : ''}`}
+onClick={async () => {
+await navigator.clipboard.writeText(urlThreadsText);
+setCopiedUrlThreads(true);
+setTimeout(() => setCopiedUrlThreads(false), 2000);
+}}
+>
+{copiedUrlThreads ? '✓ コピーしました' : 'コピー'}
+</button>
+</div>
+<pre className="url-xtext">{urlThreadsText}</pre>
+<p className="url-xtext-hint">※ コメント欄にMyLinkを貼ってください</p>
+</div>
+)}
+
 <div className="url-mylink-box">
 <p className="url-mylink-label">📋 コメント欄用MyLink</p>
 <p className="url-mylink-text">{urlItem.mylink}</p>
@@ -435,6 +512,7 @@ MyLinkをコピー
 const item = data.items[i];
 if (!item) return null;
 const xText = generateXText(review, item);
+const threadsText = generateArticleThreadsText(review, item);
 return (
 <div key={i} className="review-wrapper">
 <a href={generateMyLink(item.url)} target="_blank" rel="noopener noreferrer" className="review-card fade-in-up visible" style={{ animationDelay: `${i * 0.1}s` }}>
@@ -458,13 +536,24 @@ return (
 </div>
 </a>
 <div className="x-copy-box">
-<div className="x-copy-header">
-<span className="x-copy-label">𝕏 投稿用テキスト</span>
+<div className="card-sns-tabs">
+<div className="card-sns-tab-btns">
+<span className="card-tab-label">𝕏 X投稿用</span>
 <button className={`copy-btn ${copiedIndex === i ? 'copied' : ''}`} onClick={() => copyToClipboard(xText, i)}>
 {copiedIndex === i ? '✓ コピーしました' : 'コピー'}
 </button>
 </div>
 <pre className="x-copy-text">{xText}</pre>
+</div>
+<div className="card-threads-wrap">
+<div className="card-sns-tab-btns">
+<span className="card-threads-label">🧵 Threads用</span>
+<button className={`copy-btn ${copiedThreadsIndex === i ? 'copied' : ''}`} onClick={() => copyThreadsToClipboard(threadsText, i)}>
+{copiedThreadsIndex === i ? '✓ コピーしました' : 'コピー'}
+</button>
+</div>
+<pre className="x-copy-text">{threadsText}</pre>
+</div>
 </div>
 </div>
 );
@@ -516,7 +605,6 @@ h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title
 .generate-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(26,26,26,0.25); }
 .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* === URL指定記事生成 === */
 .convert-section { max-width: 760px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 32px) clamp(32px, 6vw, 48px); }
 .convert-inner { background: #F0FFF4; border: 1px solid #BBF7D0; border-radius: 16px; padding: clamp(20px, 4vw, 32px); }
 .convert-title { font-size: clamp(15px, 2vw, 17px); font-weight: 700; color: #1A1A1A; margin: 0 0 8px 0; }
@@ -536,10 +624,17 @@ h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title
 .url-info { padding: 16px 16px 0; }
 .url-product-name { font-size: 13px; color: #666; margin: 0 0 6px 0; line-height: 1.5; }
 .url-price { font-size: 20px; font-weight: 700; color: #1A1A1A; margin: 0; }
-.url-xtext-box { margin: 16px; background: #F8F9FF; border: 1px solid #E0E7FF; border-radius: 10px; padding: 14px; }
+
+.sns-tabs { display: flex; gap: 8px; margin: 16px 16px 0; }
+.sns-tab { flex: 1; padding: 10px; font-size: 13px; font-weight: 600; color: #666; background: #F5F5F5; border: 1px solid #E8E8E8; border-radius: 8px; cursor: pointer; font-family: inherit; transition: all 0.3s; }
+.sns-tab.active { background: #1A1A1A; color: #FFFFFF; border-color: #1A1A1A; }
+
+.url-xtext-box, .url-threads-box { margin: 16px; background: #F8F9FF; border: 1px solid #E0E7FF; border-radius: 10px; padding: 14px; }
+.url-threads-box { background: #FFF8F0; border-color: #FFE0BA; }
 .url-xtext-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .url-xtext-label { font-size: 12px; font-weight: 700; color: #5B6AD0; }
-.url-xtext { font-family: 'Noto Sans JP', sans-serif; font-size: 12px; color: #333; line-height: 1.8; margin: 0 0 8px 0; white-space: pre-wrap; word-break: break-all; background: #FFFFFF; border: 1px solid #E8E8E8; border-radius: 8px; padding: 12px; }
+.url-threads-label { font-size: 12px; font-weight: 700; color: #D97706; }
+.url-xtext { font-family: 'Noto Sans JP', sans-serif; font-size: 12px; color: #333; line-height: 1.8; margin: 0 0 8px 0; white-space: pre-wrap; word-break: break-all; background: #FFFFFF; border: 1px solid #E8E8E8; border-radius: 8px; padding: 12px; max-height: 320px; overflow-y: auto; }
 .url-xtext-hint { font-size: 11px; color: #999; margin: 0; }
 .url-mylink-box { margin: 0 16px 16px; background: #F5F5F5; border-radius: 10px; padding: 14px; }
 .url-mylink-label { font-size: 12px; font-weight: 700; color: #666; margin: 0 0 8px 0; }
@@ -581,13 +676,17 @@ h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title
 .review-footer { display: flex; justify-content: space-between; align-items: center; padding-top: clamp(14px, 2.5vw, 20px); border-top: 1px solid #F0F0F0; gap: 12px; flex-wrap: wrap; }
 .review-price { font-size: clamp(18px, 2.5vw, 22px); font-weight: 700; color: #1A1A1A; margin: 0; letter-spacing: -0.01em; }
 .check-btn { font-size: clamp(13px, 1.6vw, 14px); color: #0066FF; font-weight: 600; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.x-copy-box { background: #F8F9FF; border: 1px solid #E0E7FF; border-top: none; border-radius: 0 0 16px 16px; padding: clamp(14px, 3vw, 20px); }
-.x-copy-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.x-copy-label { font-size: 12px; font-weight: 700; color: #5B6AD0; letter-spacing: 0.05em; }
+
+.x-copy-box { background: #F8F9FF; border: 1px solid #E0E7FF; border-top: none; border-radius: 0 0 16px 16px; padding: clamp(14px, 3vw, 20px); display: flex; flex-direction: column; gap: 14px; }
+.card-threads-wrap { background: #FFF8F0; border: 1px solid #FFE0BA; border-radius: 10px; padding: 12px; }
+.card-sns-tab-btns { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.card-tab-label { font-size: 12px; font-weight: 700; color: #5B6AD0; letter-spacing: 0.05em; }
+.card-threads-label { font-size: 12px; font-weight: 700; color: #D97706; letter-spacing: 0.05em; }
 .copy-btn { padding: 6px 16px; font-size: 12px; font-weight: 600; color: #FFFFFF; background: #1A1A1A; border: none; border-radius: 100px; cursor: pointer; font-family: inherit; transition: all 0.3s; white-space: nowrap; }
 .copy-btn.copied { background: #22C55E; }
 .copy-btn:hover { opacity: 0.8; }
-.x-copy-text { font-family: 'Noto Sans JP', sans-serif; font-size: clamp(12px, 1.5vw, 13px); color: #333; line-height: 1.8; margin: 0; white-space: pre-wrap; word-break: break-all; background: #FFFFFF; border: 1px solid #E8E8E8; border-radius: 8px; padding: 12px; }
+.x-copy-text { font-family: 'Noto Sans JP', sans-serif; font-size: clamp(12px, 1.5vw, 13px); color: #333; line-height: 1.8; margin: 0; white-space: pre-wrap; word-break: break-all; background: #FFFFFF; border: 1px solid #E8E8E8; border-radius: 8px; padding: 12px; max-height: 320px; overflow-y: auto; }
+
 .full-copy-wrap { text-align: center; margin-top: clamp(24px, 5vw, 40px); }
 .full-copy-btn { padding: clamp(14px, 2.5vw, 18px) clamp(28px, 5vw, 48px); font-size: clamp(14px, 1.8vw, 16px); font-weight: 600; color: #1A1A1A; background: #FFFFFF; border: 2px solid #1A1A1A; border-radius: 12px; cursor: pointer; font-family: inherit; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .full-copy-btn:hover { background: #1A1A1A; color: #FFFFFF; transform: translateY(-2px); box-shadow: 0 12px 28px rgba(26,26,26,0.2); }
