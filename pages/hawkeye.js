@@ -1,5 +1,5 @@
 // pages/hawkeye.js
-// 🦅 鷹眼エージェント - Jina AI競合リサーチ追加版
+// 🦅 鷹眼エージェント - 4エージェント連携版（article自動連携）
 
 import { useState } from 'react';
 import Head from 'next/head';
@@ -14,7 +14,6 @@ const [mailSending, setMailSending] = useState(false);
 const [mailSent, setMailSent] = useState(false);
 const [mailError, setMailError] = useState('');
 
-// Jina AI競合リサーチ用
 const [jinaUrl, setJinaUrl] = useState('');
 const [jinaLoading, setJinaLoading] = useState(false);
 const [jinaResult, setJinaResult] = useState(null);
@@ -39,7 +38,6 @@ setLoading(false);
 }
 };
 
-// Jina AIで競合投稿を分析
 const analyzeWithJina = async () => {
 if (!jinaUrl.trim()) return;
 setJinaLoading(true);
@@ -108,6 +106,12 @@ await navigator.clipboard.writeText(tag);
 setCopiedTag(i);
 setTimeout(() => setCopiedTag(null), 2000);
 } catch (e) { alert('コピーできませんでした'); }
+};
+
+// 鷹眼→article自動連携
+const goToArticle = (url) => {
+localStorage.setItem('yumesaku_auto_url', url);
+window.location.href = '/article';
 };
 
 const hashtagSets = [
@@ -288,10 +292,12 @@ setTimeout(() => setCopiedJina(false), 2000);
 <p className="reason">💡 {p.reason}</p>
 <p className="price">¥{p.price?.toLocaleString?.() || p.price}</p>
 <div className="card-actions">
+<button className="auto-link-btn" onClick={() => goToArticle(p.url)}>
+🚀 この商品で記事を作る →
+</button>
 <button className={`copy-btn ${copied === i ? 'copied' : ''}`} onClick={() => copy(p.url, i)}>
 {copied === i ? '✓ コピーしました' : 'URLをコピー'}
 </button>
-<a href="/article" className="article-link">記事を作る →</a>
 </div>
 </div>
 </div>
@@ -309,7 +315,7 @@ disabled={mailSending || mailSent}
 {mailError && <p className="mail-error">{mailError}</p>}
 </div>
 
-<p className="hint">※ URLをコピー → Articleページの「商品URLから記事＋MyLink生成」に貼り付け</p>
+<p className="hint">※「この商品で記事を作る→」で自動的にArticleページに移動し、X・Threads投稿文が自動生成されます</p>
 </main>
 )}
 
@@ -338,7 +344,6 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .run-btn:disabled { opacity:.5; cursor:not-allowed; }
 .error { color:#E53935; margin-top:16px; font-size:14px; }
 
-/* ハッシュタグ */
 .hashtag-section { max-width:760px; margin:0 auto; padding:0 clamp(20px,4vw,32px) clamp(24px,4vw,32px); }
 .hashtag-inner { background:#FFFBEB; border:1px solid #FDE68A; border-radius:16px; padding:clamp(20px,4vw,28px); }
 .hashtag-title { font-size:clamp(15px,2vw,17px); font-weight:700; color:#1A1A1A; margin:0 0 8px; }
@@ -350,7 +355,6 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .hashtag-copy-btn { padding:8px 16px; font-size:12px; font-weight:600; color:#FFFFFF; background:#1A1A1A; border:none; border-radius:8px; cursor:pointer; font-family:inherit; transition:all .3s; white-space:nowrap; flex-shrink:0; }
 .hashtag-copy-btn.copied { background:#22C55E; }
 
-/* Jina AI競合リサーチ */
 .jina-section { max-width:760px; margin:0 auto; padding:0 clamp(20px,4vw,32px) clamp(32px,6vw,48px); }
 .jina-inner { background:#F0F7FF; border:1px solid #BAE0FF; border-radius:16px; padding:clamp(20px,4vw,28px); }
 .jina-title { font-size:clamp(15px,2vw,17px); font-weight:700; color:#1A1A1A; margin:0 0 8px; }
@@ -397,10 +401,11 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .reason { font-size:13px; color:#444; line-height:1.6; margin:0 0 12px; }
 .price { font-size:clamp(17px,2.2vw,20px); font-weight:700; margin:0 0 14px; }
 .card-actions { display:flex; flex-direction:column; gap:8px; }
+.auto-link-btn { padding:10px; font-size:13px; font-weight:600; color:#fff; background:#0066FF; border:none; border-radius:8px; cursor:pointer; font-family:inherit; transition:all .3s; }
+.auto-link-btn:hover { opacity:.85; transform:translateY(-1px); }
 .copy-btn { padding:10px; font-size:13px; font-weight:600; color:#fff; background:#1A1A1A; border:none; border-radius:8px; cursor:pointer; font-family:inherit; transition:all .3s; }
 .copy-btn.copied { background:#22C55E; }
 .copy-btn:hover { opacity:.85; }
-.article-link { text-align:center; font-size:13px; color:#0066FF; font-weight:600; text-decoration:none; padding:6px; }
 .mail-section { text-align:center; margin-top:clamp(32px,5vw,48px); }
 .mail-btn { padding:clamp(14px,2.5vw,18px) clamp(32px,6vw,56px); font-size:clamp(15px,1.8vw,17px); font-weight:600; color:#fff; background:#0066FF; border:none; border-radius:12px; cursor:pointer; font-family:inherit; transition:all .3s; }
 .mail-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 12px 28px rgba(0,102,255,0.3); }
