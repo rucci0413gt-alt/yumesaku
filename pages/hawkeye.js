@@ -1,5 +1,5 @@
 // pages/hawkeye.js
-// 🦅 鷹眼エージェント - 4エージェント連携版（article自動連携）
+// 🦅 鷹眼エージェント - 検索窓対応版
 
 import { useState } from 'react';
 import Head from 'next/head';
@@ -20,13 +20,19 @@ const [jinaResult, setJinaResult] = useState(null);
 const [jinaError, setJinaError] = useState('');
 const [copiedJina, setCopiedJina] = useState(false);
 
+// 検索フォーム
+const [genre, setGenre] = useState('エンジニア向け');
+const [persona, setPersona] = useState('エンジニア');
+const [productType, setProductType] = useState('鉄板');
+const [customKeyword, setCustomKeyword] = useState('');
+
 const run = async () => {
 setLoading(true); setError(''); setData(null); setMailSent(false);
 try {
 const res = await fetch('/api/hawkeye', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ genre: 'エンジニア向け' }),
+body: JSON.stringify({ genre, persona, productType, customKeyword }),
 });
 const result = await res.json();
 if (result.success) setData(result);
@@ -67,6 +73,7 @@ setMailSending(true); setMailError(''); setMailSent(false);
 try {
 const text = [
 `🦅 鷹眼レポート`,
+`ジャンル：${data.genre} / ペルソナ：${data.persona} / タイプ：${data.productType}`,
 ``,
 `📈 次に来そう：${data.nextTrend || 'なし'}`,
 `🎁 抱き合わせ：${data.bundle || 'なし'}`,
@@ -108,7 +115,6 @@ setTimeout(() => setCopiedTag(null), 2000);
 } catch (e) { alert('コピーできませんでした'); }
 };
 
-// 鷹眼→article自動連携
 const goToArticle = (url) => {
 localStorage.setItem('yumesaku_auto_url', url);
 window.location.href = '/article';
@@ -152,8 +158,54 @@ return (
 <section className="hero">
 <div className="hero-inner">
 <p className="eyebrow">🦅 鷹眼エージェント</p>
-<h1 className="hero-title">エンジニアが、欲しがる。</h1>
-<p className="hero-subtitle">人気の鉄板商品・次に来る商品・抱き合わせを<br />AIが瞬時に見抜く。</p>
+<h1 className="hero-title">欲しがる商品を、見抜く。</h1>
+<p className="hero-subtitle">ジャンル・ペルソナ・商品タイプを選ぶだけで<br />AIが最適な商品をリサーチします</p>
+
+{/* 検索フォーム */}
+<div className="search-form">
+<div className="search-row">
+<div className="search-group">
+<label className="search-label">ジャンル</label>
+<select value={genre} onChange={e => setGenre(e.target.value)} className="search-select">
+<option>エンジニア向け</option>
+<option>ガジェット</option>
+<option>在宅ワーク</option>
+<option>ドリンク・サプリ</option>
+<option>カメラ・撮影</option>
+</select>
+</div>
+<div className="search-group">
+<label className="search-label">ペルソナ</label>
+<select value={persona} onChange={e => setPersona(e.target.value)} className="search-select">
+<option>エンジニア</option>
+<option>20代</option>
+<option>クリエイター</option>
+<option>在宅ワーカー</option>
+<option>フリーランス</option>
+</select>
+</div>
+<div className="search-group">
+<label className="search-label">商品タイプ</label>
+<select value={productType} onChange={e => setProductType(e.target.value)} className="search-select">
+<option>鉄板</option>
+<option>次来る</option>
+<option>抱き合わせ</option>
+</select>
+</div>
+</div>
+<div className="search-custom">
+<label className="search-label">フリーワード（任意）</label>
+<input
+type="text"
+value={customKeyword}
+onChange={e => setCustomKeyword(e.target.value)}
+onKeyDown={e => e.key === 'Enter' && run()}
+placeholder="例：SHOKZ イヤホン・スタンディングデスク"
+className="search-input"
+/>
+</div>
+</div>
+
 <button onClick={run} disabled={loading} className="run-btn">
 {loading ? 'リサーチ中...' : '🦅 リサーチ開始'}
 </button>
@@ -261,6 +313,12 @@ setTimeout(() => setCopiedJina(false), 2000);
 
 {data && (
 <main className="results">
+<div className="result-meta">
+<span className="meta-tag">🎯 {data.genre}</span>
+<span className="meta-tag">👤 {data.persona}</span>
+<span className="meta-tag">📦 {data.productType}</span>
+</div>
+
 {(data.nextTrend || data.bundle) && (
 <div className="insights">
 {data.nextTrend && (
@@ -278,7 +336,7 @@ setTimeout(() => setCopiedJina(false), 2000);
 </div>
 )}
 
-<h2 className="section-title">今日の鉄板ピック</h2>
+<h2 className="section-title">今日のピック</h2>
 <div className="grid">
 {data.recommendations.map((p, i) => (
 <div key={i} className="card">
@@ -315,7 +373,7 @@ disabled={mailSending || mailSent}
 {mailError && <p className="mail-error">{mailError}</p>}
 </div>
 
-<p className="hint">※「この商品で記事を作る→」で自動的にArticleページに移動し、X・Threads投稿文が自動生成されます</p>
+<p className="hint">※「この商品で記事を作る→」でArticleページに自動移動してX・Threadsテキストが生成されます</p>
 </main>
 )}
 
@@ -338,7 +396,19 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .hero-inner { max-width:760px; margin:0 auto; }
 .eyebrow { font-size:clamp(12px,1.6vw,14px); color:#0066FF; font-weight:600; letter-spacing:0.08em; margin:0 0 12px; }
 .hero-title { font-size:clamp(28px,6vw,52px); font-weight:700; line-height:1.3; letter-spacing:-0.03em; margin:0 0 clamp(16px,3vw,24px); }
-.hero-subtitle { font-size:clamp(14px,2vw,17px); color:#666; line-height:1.75; margin:0 0 clamp(28px,5vw,44px); }
+.hero-subtitle { font-size:clamp(14px,2vw,17px); color:#666; line-height:1.75; margin:0 0 clamp(24px,4vw,36px); }
+
+/* 検索フォーム */
+.search-form { background:#F8F9FF; border:1px solid #E0E7FF; border-radius:16px; padding:clamp(16px,3vw,24px); margin:0 0 clamp(20px,3vw,28px); text-align:left; }
+.search-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px; }
+.search-group { display:flex; flex-direction:column; gap:6px; }
+.search-label { font-size:11px; font-weight:600; color:#5B6AD0; letter-spacing:0.05em; text-transform:uppercase; }
+.search-select { padding:9px 12px; font-size:13px; border:1px solid #E0E7FF; border-radius:8px; background:#FFFFFF; color:#1A1A1A; font-family:inherit; outline:none; transition:all .3s; }
+.search-select:focus { border-color:#0066FF; box-shadow:0 0 0 3px rgba(0,102,255,0.1); }
+.search-custom { display:flex; flex-direction:column; gap:6px; }
+.search-input { padding:10px 14px; font-size:14px; border:1px solid #E0E7FF; border-radius:8px; background:#FFFFFF; color:#1A1A1A; font-family:inherit; outline:none; transition:all .3s; }
+.search-input:focus { border-color:#0066FF; box-shadow:0 0 0 3px rgba(0,102,255,0.1); }
+
 .run-btn { padding:clamp(14px,2.5vw,18px) clamp(32px,6vw,56px); font-size:clamp(15px,1.8vw,17px); font-weight:600; color:#fff; background:#1A1A1A; border:none; border-radius:12px; cursor:pointer; font-family:inherit; transition:all .3s; }
 .run-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 12px 28px rgba(26,26,26,0.25); }
 .run-btn:disabled { opacity:.5; cursor:not-allowed; }
@@ -364,7 +434,6 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .jina-input:focus { border-color:#1A1A1A; box-shadow:0 0 0 4px rgba(26,26,26,0.05); }
 .jina-btn { padding:12px 20px; font-size:14px; font-weight:600; color:#FFFFFF; background:#1A1A1A; border:none; border-radius:10px; cursor:pointer; font-family:inherit; transition:all .3s; white-space:nowrap; }
 .jina-btn:disabled { opacity:.5; cursor:not-allowed; }
-.jina-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 8px 20px rgba(26,26,26,0.2); }
 .jina-loading { display:flex; align-items:center; gap:10px; margin-top:16px; color:#666; font-size:13px; }
 .mini-spinner { width:18px; height:18px; border:2px solid #E8E8E8; border-top-color:#1A1A1A; border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0; }
 .jina-error { color:#E53935; font-size:13px; margin-top:12px; }
@@ -383,7 +452,10 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 @keyframes spin { to { transform:rotate(360deg); } }
 .loading-text { margin-top:24px; font-weight:500; }
 .loading-sub { color:#999; font-size:13px; margin-top:4px; }
+
 .results { max-width:1100px; margin:0 auto; padding:clamp(20px,4vw,40px) clamp(20px,4vw,32px) clamp(60px,10vw,96px); }
+.result-meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:clamp(20px,3vw,28px); }
+.meta-tag { font-size:12px; font-weight:600; color:#5B6AD0; background:#EEF2FF; padding:5px 12px; border-radius:100px; }
 .insights { display:grid; grid-template-columns:1fr 1fr; gap:clamp(12px,2vw,20px); margin-bottom:clamp(32px,5vw,48px); }
 .insight-card { background:#fff; border:1px solid #E0E7FF; border-radius:16px; padding:clamp(18px,3vw,24px); }
 .insight-label { font-size:13px; font-weight:700; color:#5B6AD0; margin:0 0 8px; }
@@ -422,6 +494,7 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .hashtag-copy-btn { width:100%; }
 .jina-box { flex-direction:column; }
 .jina-btn { width:100%; }
+.search-row { grid-template-columns:1fr; }
 }
 `}</style>
 </>
