@@ -1,5 +1,5 @@
 // pages/article.js
-// AI記事自動生成 - 4エージェント連携版（鷹眼からの自動受け取り対応）
+// AI記事自動生成 - Threads商品名修正版
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
@@ -70,9 +70,10 @@ return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=3771004&pid=8926
 };
 
 const generateThreadsText = (headline, desc, recommend, price, name) => {
+const shortName = name.length > 25 ? name.slice(0, 25) + '...' : name;
 return `【在宅ワーカー必見】${headline}
 
-${name}を実際に使ってみた感想をシェアします。
+${shortName}を試してみました。
 
 ▼ こんな人におすすめ
 ${recommend}
@@ -151,6 +152,12 @@ content: `以下の商品のSNS投稿文を作成してください。
 ・おすすめの人物像
 ・説明は40文字以内
 
+禁止事項（必ず守る）：
+・「〜について」「〜することが大切」は使わない
+・冒頭の挨拶は禁止
+・「いかがでしょうか」「ぜひチェック」などのAI的な締めは禁止
+・同じ語尾を2回以上連続で使わない
+
 JSON形式のみで返してください（前後の説明不要）：
 {"headline": "キャッチコピー", "desc": "説明40文字以内", "recommend": "おすすめの人"}`
 }]
@@ -189,7 +196,6 @@ setUrlThreadsText(threadsText);
 }
 };
 
-// ページ読み込み時：鷹眼からの自動連携をチェック
 useEffect(() => {
 setMounted(true);
 if (!authenticated) return;
@@ -432,16 +438,10 @@ className="convert-input"
 </div>
 
 <div className="sns-tabs">
-<button
-className={`sns-tab ${activeTab === 'x' ? 'active' : ''}`}
-onClick={() => setActiveTab('x')}
->
+<button className={`sns-tab ${activeTab === 'x' ? 'active' : ''}`} onClick={() => setActiveTab('x')}>
 𝕏 X投稿用
 </button>
-<button
-className={`sns-tab ${activeTab === 'threads' ? 'active' : ''}`}
-onClick={() => setActiveTab('threads')}
->
+<button className={`sns-tab ${activeTab === 'threads' ? 'active' : ''}`} onClick={() => setActiveTab('threads')}>
 🧵 Threads用
 </button>
 </div>
@@ -554,7 +554,7 @@ return (
 </div>
 </a>
 <div className="x-copy-box">
-<div className="card-threads-wrap" style={{background:'#F8F9FF', borderColor:'#E0E7FF'}}>
+<div className="card-threads-wrap" style={{background:'#F8F9FF', border:'1px solid #E0E7FF', borderRadius:'10px', padding:'12px'}}>
 <div className="card-sns-tab-btns">
 <span className="card-tab-label">𝕏 X投稿用</span>
 <button className={`copy-btn ${copiedIndex === i ? 'copied' : ''}`} onClick={() => copyToClipboard(xText, i)}>
@@ -622,7 +622,6 @@ h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title
 .generate-btn { padding: clamp(14px, 2.5vw, 18px) clamp(32px, 6vw, 56px); font-size: clamp(14px, 1.8vw, 16px); font-weight: 600; color: #FFFFFF; background: #1A1A1A; border: none; border-radius: 12px; cursor: pointer; font-family: inherit; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .generate-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(26,26,26,0.25); }
 .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
 .convert-section { max-width: 760px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 32px) clamp(32px, 6vw, 48px); }
 .convert-inner { background: #F0FFF4; border: 1px solid #BBF7D0; border-radius: 16px; padding: clamp(20px, 4vw, 32px); }
 .auto-notice { background:#0066FF; color:#FFFFFF; font-size:13px; font-weight:600; padding:10px 14px; border-radius:10px; margin-bottom:16px; text-align:center; }
@@ -643,11 +642,9 @@ h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title
 .url-info { padding: 16px 16px 0; }
 .url-product-name { font-size: 13px; color: #666; margin: 0 0 6px 0; line-height: 1.5; }
 .url-price { font-size: 20px; font-weight: 700; color: #1A1A1A; margin: 0; }
-
 .sns-tabs { display: flex; gap: 8px; margin: 16px 16px 0; }
 .sns-tab { flex: 1; padding: 10px; font-size: 13px; font-weight: 600; color: #666; background: #F5F5F5; border: 1px solid #E8E8E8; border-radius: 8px; cursor: pointer; font-family: inherit; transition: all 0.3s; }
 .sns-tab.active { background: #1A1A1A; color: #FFFFFF; border-color: #1A1A1A; }
-
 .url-xtext-box, .url-threads-box { margin: 16px; background: #F8F9FF; border: 1px solid #E0E7FF; border-radius: 10px; padding: 14px; }
 .url-threads-box { background: #FFF8F0; border-color: #FFE0BA; }
 .url-xtext-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -662,7 +659,6 @@ h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title
 .url-mylink-copy:hover { opacity: 0.9; }
 .url-check-btn { display: block; margin: 0 16px 16px; padding: 14px; text-align: center; background: #1A1A1A; color: #FFFFFF; text-decoration: none; border-radius: 10px; font-size: 15px; font-weight: 600; transition: all 0.3s; }
 .url-check-btn:hover { opacity: 0.8; }
-
 .loading { text-align: center; padding: clamp(60px, 10vw, 120px) 20px; }
 .spinner-wrap { position: relative; width: 56px; height: 56px; margin: 0 auto; }
 .spinner-ring { position: absolute; width: 100%; height: 100%; border: 2px solid #E8E8E8; border-top-color: #1A1A1A; border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -695,7 +691,6 @@ h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title
 .review-footer { display: flex; justify-content: space-between; align-items: center; padding-top: clamp(14px, 2.5vw, 20px); border-top: 1px solid #F0F0F0; gap: 12px; flex-wrap: wrap; }
 .review-price { font-size: clamp(18px, 2.5vw, 22px); font-weight: 700; color: #1A1A1A; margin: 0; letter-spacing: -0.01em; }
 .check-btn { font-size: clamp(13px, 1.6vw, 14px); color: #0066FF; font-weight: 600; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-
 .x-copy-box { background: #F8F9FF; border: 1px solid #E0E7FF; border-top: none; border-radius: 0 0 16px 16px; padding: clamp(14px, 3vw, 20px); display: flex; flex-direction: column; gap: 14px; }
 .card-threads-wrap { background: #FFF8F0; border: 1px solid #FFE0BA; border-radius: 10px; padding: 12px; }
 .card-sns-tab-btns { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -705,7 +700,6 @@ h1, h2, h3, h4, .hero-title, .article-title, .review-headline, .conclusion-title
 .copy-btn.copied { background: #22C55E; }
 .copy-btn:hover { opacity: 0.8; }
 .x-copy-text { font-family: 'Noto Sans JP', sans-serif; font-size: clamp(12px, 1.5vw, 13px); color: #333; line-height: 1.8; margin: 0; white-space: pre-wrap; word-break: break-all; background: #FFFFFF; border: 1px solid #E8E8E8; border-radius: 8px; padding: 12px; max-height: 320px; overflow-y: auto; }
-
 .full-copy-wrap { text-align: center; margin-top: clamp(24px, 5vw, 40px); }
 .full-copy-btn { padding: clamp(14px, 2.5vw, 18px) clamp(28px, 5vw, 48px); font-size: clamp(14px, 1.8vw, 16px); font-weight: 600; color: #1A1A1A; background: #FFFFFF; border: 2px solid #1A1A1A; border-radius: 12px; cursor: pointer; font-family: inherit; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .full-copy-btn:hover { background: #1A1A1A; color: #FFFFFF; transform: translateY(-2px); box-shadow: 0 12px 28px rgba(26,26,26,0.2); }
