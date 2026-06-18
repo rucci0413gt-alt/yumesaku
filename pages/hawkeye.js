@@ -162,18 +162,53 @@ return (
 <p className="hero-subtitle">ジャンル・ペルソナ・商品タイプを選ぶだけで<br />AIが最適な商品をリサーチします</p>
 
 {/* 検索フォーム */}
+{/* 検索フォーム */}
 <div className="search-form">
 <div className="search-row">
 <div className="search-group">
 <label className="search-label">ジャンル</label>
-<select value={genre} onChange={e => setGenre(e.target.value)} className="search-select">
-<option>エンジニア向け</option>
-<option>ガジェット</option>
-<option>在宅ワーク</option>
-<option>ドリンク・サプリ</option>
-<option>カメラ・撮影</option>
-</select>
+<input
+type="text"
+value={genre}
+onChange={e => setGenre(e.target.value)}
+placeholder="例：ガジェット・料理・美容"
+className="search-select"
+/>
 </div>
+<div className="search-group">
+<label className="search-label">ペルソナ</label>
+<input
+type="text"
+value={persona}
+onChange={e => setPersona(e.target.value)}
+placeholder="例：エンジニア・30代主婦"
+className="search-select"
+/>
+</div>
+<div className="search-group">
+<label className="search-label">商品タイプ</label>
+<input
+type="text"
+value={productType}
+onChange={e => setProductType(e.target.value)}
+placeholder="例：鉄板・次来る・抱き合わせ"
+className="search-select"
+/>
+</div>
+</div>
+<div className="search-custom">
+<label className="search-label">フリーワード（任意・これだけでもOK）</label>
+<input
+type="text"
+value={customKeyword}
+onChange={e => setCustomKeyword(e.target.value)}
+onKeyDown={e => e.key === 'Enter' && run()}
+placeholder="例：SHOKZ イヤホン・スタンディングデスク"
+className="search-input"
+/>
+</div>
+</div>
+
 <div className="search-group">
 <label className="search-label">ペルソナ</label>
 <select value={persona} onChange={e => setPersona(e.target.value)} className="search-select">
