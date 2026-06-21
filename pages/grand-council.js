@@ -1,5 +1,5 @@
 // pages/grand-council.js
-// 🏛️ ユメサク株式会社 統合会議 - 4部署→経営層の自動フロー
+// 🏛️ ユメサク株式会社 統合会議 - 4部署→経営層の自動フロー + 実行プラン変換
 
 import { useState } from 'react';
 import Head from 'next/head';
@@ -7,12 +7,15 @@ import Head from 'next/head';
 export default function GrandCouncil() {
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
-  const [phase, setPhase] = useState(0); // 0:未開始 1:マーケ中 2:技術中 3:広告中 4:経営層中 5:完了
+  const [phase, setPhase] = useState(0);
 
   const [marketResult, setMarketResult] = useState('');
   const [techResult, setTechResult] = useState('');
   const [adResult, setAdResult] = useState('');
   const [finalResult, setFinalResult] = useState('');
+
+  const [planLoading, setPlanLoading] = useState(false);
+  const [actionPlan, setActionPlan] = useState('');
 
   const callClaude = async (systemPrompt, userPrompt) => {
     const res = await fetch('/api/council', {
@@ -38,7 +41,7 @@ export default function GrandCouncil() {
   const startGrandCouncil = async () => {
     if (!question.trim()) return;
     setLoading(true);
-    setMarketResult(''); setTechResult(''); setAdResult(''); setFinalResult('');
+    setMarketResult(''); setTechResult(''); setAdResult(''); setFinalResult(''); setActionPlan('');
 
     setPhase(1);
     const marketConclusion = await runDepartment('マーケ部門', [
@@ -88,6 +91,24 @@ export default function GrandCouncil() {
     setFinalResult(chairText);
     setPhase(5);
     setLoading(false);
+  };
+
+  const convertToActionPlan = async () => {
+    setPlanLoading(true);
+    setActionPlan('');
+    const plan = await callClaude(
+      `あなたは「実行プランナーU39」。会社の最終決定を読み、るっちさん（非エンジニアの個人開発者）が
+すぐ動ける「具体的な実行タスク」に変換する。
+タスクは以下のような既存ツールに対応させる形で、3〜5個に分解する：
+- 記事生成（/article）→ 記事タイトル案・内容の方向性
+- X投稿文（コピー機能）→ 投稿文の例
+- 鷹の目リサーチ（/hawkeye）→ 調べるべきキーワード・ジャンル
+それぞれのタスクに「① タスク名 → 具体的な内容例」の形で出す。
+最後に「るっちさんが今すぐコピペで使える」レベルの具体例を1つ含める。日本語で。`,
+      `会社の最終決定：${finalResult}\n\nこの決定を、るっちさんが今すぐ実行できる具体的なタスクに変換してください。`
+    );
+    setActionPlan(plan);
+    setPlanLoading(false);
   };
 
   const phaseLabel = {
@@ -150,7 +171,26 @@ export default function GrandCouncil() {
             {marketResult && (<div className="result-card market"><div className="result-label">📈 マーケ部門の結論</div><div className="result-text">{marketResult}</div></div>)}
             {techResult && (<div className="result-card tech"><div className="result-label">🎨 技術部門の結論</div><div className="result-text">{techResult}</div></div>)}
             {adResult && (<div className="result-card ad"><div className="result-label">📣 広告部門の結論</div><div className="result-text">{adResult}</div></div>)}
-            {finalResult && (<div className="result-card final"><div className="result-label">🏮 ユメサク株式会社 最終決定</div><div className="result-text">{finalResult}</div></div>)}
+            {finalResult && (
+              <div className="result-card final">
+                <div className="result-label">🏮 ユメサク株式会社 最終決定</div>
+                <div className="result-text">{finalResult}</div>
+
+                {!actionPlan && (
+                  <button onClick={convertToActionPlan} disabled={planLoading} className="plan-btn">
+                    {planLoading ? '⏳ 実行プランを作成中...' : '📋 この決定を実行プランに変換する'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {actionPlan && (
+              <div className="result-card plan">
+                <div className="result-label">📋 今すぐできる実行プラン</div>
+                <div className="result-text">{actionPlan}</div>
+                <p className="plan-note">※ このプランを参考に、記事生成・鷹の目・X投稿の各ページで実際の作業を行ってください。</p>
+              </div>
+            )}
           </div>
         </main>
 
@@ -194,9 +234,15 @@ export default function GrandCouncil() {
         .result-card.tech { border-left-color:#7C3AED; }
         .result-card.ad { border-left-color:#DB2777; }
         .result-card.final { border-left-color:#B45309; border:2px solid #B45309; background:#FFFBEB; }
+        .result-card.plan { border-left-color:#15803D; border:2px solid #15803D; background:#F0FDF4; }
         .result-label { font-size:13px; font-weight:700; margin-bottom:10px; color:#444; }
         .result-card.final .result-label { color:#B45309; font-size:15px; }
+        .result-card.plan .result-label { color:#15803D; font-size:15px; }
         .result-text { font-size:14px; line-height:1.85; color:#333; white-space:pre-wrap; }
+        .plan-btn { margin-top:16px; width:100%; padding:14px; background:#15803D; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .3s; }
+        .plan-btn:hover:not(:disabled) { opacity:.9; }
+        .plan-btn:disabled { opacity:.6; cursor:not-allowed; }
+        .plan-note { font-size:12px; color:#999; margin-top:12px; margin-bottom:0; }
         .footer { border-top:1px solid #E8E8E8; padding:clamp(24px,5vw,40px); text-align:center; background:#fff; }
         .footer-text { font-size:12px; color:#999; margin:0; }
         @media(max-width:640px){ .hero-subtitle br { display:none; } .nav { gap:12px; } }
