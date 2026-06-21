@@ -1,5 +1,5 @@
 // pages/hawkeye.js
-// 🦅 鷹眼エージェント - 検索窓対応版
+// 🦅 鷹眼エージェント - 自由入力検索窓版
 
 import { useState } from 'react';
 import Head from 'next/head';
@@ -20,7 +20,6 @@ const [jinaResult, setJinaResult] = useState(null);
 const [jinaError, setJinaError] = useState('');
 const [copiedJina, setCopiedJina] = useState(false);
 
-// 検索フォーム
 const [genre, setGenre] = useState('エンジニア向け');
 const [persona, setPersona] = useState('エンジニア');
 const [productType, setProductType] = useState('鉄板');
@@ -49,7 +48,6 @@ if (!jinaUrl.trim()) return;
 setJinaLoading(true);
 setJinaError('');
 setJinaResult(null);
-
 try {
 const jinaFetchUrl = `https://r.jina.ai/${jinaUrl.trim()}`;
 const res = await fetch('/api/jina-analyze', {
@@ -83,7 +81,6 @@ const text = [
 `${i+1}. ${p.name}\n 💡 ${p.reason}\n ¥${p.price?.toLocaleString?.() || p.price}\n URL: ${p.url}`
 ),
 ].join('\n');
-
 const res = await fetch('/api/send-hawkeye-mail', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
@@ -128,12 +125,10 @@ const hashtagSets = [
 ['#デスクツアー', '#作業環境', '#ガジェットレビュー', '#テレワーク生活', '#エンジニア必見'],
 ];
 
-const getRandomTags = () => {
+const [tagSets] = useState(() => {
 const shuffled = [...hashtagSets].sort(() => Math.random() - 0.5);
 return shuffled.slice(0, 3);
-};
-
-const [tagSets] = useState(() => getRandomTags());
+});
 
 return (
 <>
@@ -148,9 +143,10 @@ return (
 <div className="header-inner">
 <a href="/" className="logo">yumesaku</a>
 <nav className="nav">
-<a href="/shop" className="nav-link">Shop</a>
 <a href="/ranking" className="nav-link">Ranking</a>
 <a href="/article" className="nav-link">Article</a>
+<a href="/hawkeye" className="nav-link active">鷹眼</a>
+<a href="/marketing" className="nav-link">分析</a>
 </nav>
 </div>
 </header>
@@ -159,9 +155,8 @@ return (
 <div className="hero-inner">
 <p className="eyebrow">🦅 鷹眼エージェント</p>
 <h1 className="hero-title">欲しがる商品を、見抜く。</h1>
-<p className="hero-subtitle">ジャンル・ペルソナ・商品タイプを選ぶだけで<br />AIが最適な商品をリサーチします</p>
+<p className="hero-subtitle">ジャンル・ペルソナ・商品タイプを入力するだけで<br />AIが最適な商品をリサーチします</p>
 
-{/* 検索フォーム */}
 {/* 検索フォーム */}
 <div className="search-form">
 <div className="search-row">
@@ -198,38 +193,6 @@ className="search-select"
 </div>
 <div className="search-custom">
 <label className="search-label">フリーワード（任意・これだけでもOK）</label>
-<input
-type="text"
-value={customKeyword}
-onChange={e => setCustomKeyword(e.target.value)}
-onKeyDown={e => e.key === 'Enter' && run()}
-placeholder="例：SHOKZ イヤホン・スタンディングデスク"
-className="search-input"
-/>
-</div>
-</div>
-
-<div className="search-group">
-<label className="search-label">ペルソナ</label>
-<select value={persona} onChange={e => setPersona(e.target.value)} className="search-select">
-<option>エンジニア</option>
-<option>20代</option>
-<option>クリエイター</option>
-<option>在宅ワーカー</option>
-<option>フリーランス</option>
-</select>
-</div>
-<div className="search-group">
-<label className="search-label">商品タイプ</label>
-<select value={productType} onChange={e => setProductType(e.target.value)} className="search-select">
-<option>鉄板</option>
-<option>次来る</option>
-<option>抱き合わせ</option>
-</select>
-</div>
-</div>
-<div className="search-custom">
-<label className="search-label">フリーワード（任意）</label>
 <input
 type="text"
 value={customKeyword}
@@ -425,15 +388,15 @@ h1,h2,.hero-title { word-break:keep-all; overflow-wrap:break-word; }
 .header { border-bottom:1px solid #E8E8E8; background:rgba(250,250,250,0.85); backdrop-filter:blur(20px); position:sticky; top:0; z-index:100; }
 .header-inner { max-width:1200px; margin:0 auto; padding:clamp(14px,2.5vw,20px) clamp(20px,4vw,32px); display:flex; justify-content:space-between; align-items:center; }
 .logo { font-family:'Inter',sans-serif; font-size:clamp(18px,3vw,22px); font-weight:700; color:#1A1A1A; text-decoration:none; }
-.nav { display:flex; gap:clamp(16px,3vw,32px); }
-.nav-link { font-size:clamp(13px,1.5vw,14px); color:#1A1A1A; text-decoration:none; font-weight:500; }
+.nav { display:flex; gap:clamp(12px,2vw,24px); }
+.nav-link { font-size:clamp(12px,1.5vw,14px); color:#1A1A1A; text-decoration:none; font-weight:500; }
+.nav-link.active { font-weight:700; border-bottom:2px solid #1A1A1A; padding-bottom:2px; }
 .hero { padding:clamp(48px,10vw,96px) clamp(20px,4vw,32px) clamp(32px,6vw,48px); text-align:center; }
 .hero-inner { max-width:760px; margin:0 auto; }
 .eyebrow { font-size:clamp(12px,1.6vw,14px); color:#0066FF; font-weight:600; letter-spacing:0.08em; margin:0 0 12px; }
 .hero-title { font-size:clamp(28px,6vw,52px); font-weight:700; line-height:1.3; letter-spacing:-0.03em; margin:0 0 clamp(16px,3vw,24px); }
 .hero-subtitle { font-size:clamp(14px,2vw,17px); color:#666; line-height:1.75; margin:0 0 clamp(24px,4vw,36px); }
 
-/* 検索フォーム */
 .search-form { background:#F8F9FF; border:1px solid #E0E7FF; border-radius:16px; padding:clamp(16px,3vw,24px); margin:0 0 clamp(20px,3vw,28px); text-align:left; }
 .search-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:12px; }
 .search-group { display:flex; flex-direction:column; gap:6px; }
