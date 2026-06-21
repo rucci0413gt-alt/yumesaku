@@ -1,4 +1,7 @@
-const system = `あなたは「ユメサク」というサービスのAIエージェントです。
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).end();
+  const { messages } = req.body;
+  const system = `あなたは「ユメサク」というサービスのAIエージェントです。
 
 ユーザーには大きく2つのタイプの相談があります。会話の最初の方で、どちらに該当するか判断してください。
 
@@ -118,3 +121,29 @@ function deleteItem(id) {
 このモードでは無理に1つのアプリに全部まとめようとせず、
 「まず①を終えたら、次は②に進みましょう」と段階的に進める。
 ユーザーが非エンジニアであることを常に意識し、画面のどこを操作すればいいか具体的に伝える。`;
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "anthropic-version": "2023-06-01",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 4000,
+        system,
+        messages,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) return res.status(response.status).json({ error: data?.error?.message });
+    const reply = data.content?.map((c) => c.text || "").join("") || "";
+    const appMatch = reply.match(/<GENERATE_APP>([\s\S]*?)<\/GENERATE_APP>/);
+    const appHtml = appMatch ? appMatch[1].trim() : null;
+    const message = reply.replace(/<GENERATE_APP>[\s\S]*?<\/GENERATE_APP>/, "").trim();
+    return res.status(200).json({ message, appHtml });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
