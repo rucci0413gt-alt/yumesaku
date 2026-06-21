@@ -37,13 +37,60 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-ser
 </body>
 </html>
 </GENERATE_APP>
-
 【生成するアプリの要件】
 - 完全に動作するシングルHTMLファイル
 - スマホでも使いやすいデザイン
-- LocalStorageでデータを保存
+- データ保存には絶対にLocalStorageを使わない（ダウンロードして file:// で開くと動作しないため）
+- データ保存は必ずIndexedDBを使う。以下の共通コードを毎回そのまま使うこと：
+
+\`\`\`javascript
+// IndexedDB共通セットアップ（毎回これを使う）
+let db;
+const dbRequest = indexedDB.open('AppDB', 1);
+dbRequest.onupgradeneeded = (e) => {
+  db = e.target.result;
+  if (!db.objectStoreNames.contains('items')) {
+    db.createObjectStore('items', { keyPath: 'id', autoIncrement: true });
+  }
+};
+dbRequest.onsuccess = (e) => {
+  db = e.target.result;
+  loadItems(); // 初期表示
+};
+
+function addItem(data) {
+  const tx = db.transaction('items', 'readwrite');
+  tx.objectStore('items').add(data);
+  tx.oncomplete = () => loadItems();
+}
+
+function loadItems() {
+  const tx = db.transaction('items', 'readonly');
+  const store = tx.objectStore('items');
+  const items = [];
+  store.openCursor().onsuccess = (e) => {
+    const cursor = e.target.result;
+    if (cursor) {
+      items.push(cursor.value);
+      cursor.continue();
+    } else {
+      renderItems(items); // ここで画面に反映する関数を呼ぶ
+    }
+  };
+}
+
+function deleteItem(id) {
+  const tx = db.transaction('items', 'readwrite');
+  tx.objectStore('items').delete(id);
+  tx.oncomplete = () => loadItems();
+}
+\`\`\`
+
+- 上記のadd/delete/load関数をベースに、アプリ内容に応じてデータ構造（data）とrenderItems関数の中身を変更して実装する
+- ボタンのonclickは必ずこれらの関数を正しく呼び出すこと
 - 見た目は清潔感があり、使いやすいUI
 - 日本語UI
+
 
 生成後は「完成しました！下のプレビューで確認してください😊」と伝える。`;
 
