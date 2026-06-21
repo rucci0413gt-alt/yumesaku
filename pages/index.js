@@ -215,6 +215,7 @@ export default function Home() {
               <a href="/shop" className="nav-link">Shop</a>
               <a href="/ranking" className="nav-link">Ranking</a>
               <a href="/article" className="nav-link">Article</a>
+              <a href="/grand-council" className="nav-link">🏛️ 会社</a>
             </nav>
           </div>
         </header>
@@ -370,6 +371,12 @@ export default function Home() {
                   <div className="feature-eyebrow">Article</div>
                   <h3 className="feature-name">読む</h3>
                   <p className="feature-desc">AIが選ぶ、今読んでおきたいレビュー</p>
+                  <span className="feature-arrow">→</span>
+                </a>
+                <a href="/grand-council" className="feature-card">
+                  <div className="feature-eyebrow">Council</div>
+                  <h3 className="feature-name">相談する</h3>
+                  <p className="feature-desc">AI社員たちが議論し、会社としての結論を出す</p>
                   <span className="feature-arrow">→</span>
                 </a>
               </div>
