@@ -1,5 +1,5 @@
 // pages/article.js
-// AI記事自動生成 - Threads商品名修正版
+// AI記事自動生成 - AI臭除去版（generateThreadsText修正）
 
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
@@ -69,24 +69,40 @@ const encoded = encodeURIComponent(url);
 return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=3771004&pid=892616093&vc_url=${encoded}`;
 };
 
+// ★ここだけ変更：AI臭を除去したるっちさん語り口版
 const generateThreadsText = (headline, desc, recommend, price, name) => {
 const shortName = name.length > 25 ? name.slice(0, 25) + '...' : name;
-return `【在宅ワーカー必見】${headline}
 
-${shortName}を試してみました。
+const openers = [
+`正直、最初は半信半疑だったんだけど`,
+`これ、なんで今まで知らなかったんだろって感じ`,
+`在宅始めてから地味に困ってたやつ、解決した`,
+`使ってみてわかったんだけど`,
+`デスク環境を整えてきて、これは外せなくなった`,
+];
+const closers = [
+`イヤホン買う時、これセットで買っとけばよかったな`,
+`もっと早く使えばよかったと思ってる`,
+`地味だけど、あると全然違う`,
+`価格的にも試しやすいし、正直アリだと思う`,
+`デスク周りを整えたい人には刺さると思う`,
+];
+const opener = openers[Math.floor(Math.random() * openers.length)];
+const closer = closers[Math.floor(Math.random() * closers.length)];
 
-▼ こんな人におすすめ
-${recommend}
+return `${opener}
 
-▼ 使ってみてわかったこと
+${shortName}
+
 ${desc}
 
-長時間作業でも快適に使えるのが一番のポイント。デスク環境を整えたい方にはぜひ試してほしい一品です。
+${recommend}向けな感じだけど、ガジェット好きなら普通に気になると思う。
 
-💰 価格：${price}
+💰 ${price}
 
-商品リンクはコメント欄に貼っています👇
-気になる方はチェックしてみてください！
+${closer}
+
+詳しくはコメント欄に貼っとくね👇
 
 #在宅ワーク #ガジェット #テレワーク #デスク環境 #作業効率化`;
 };
