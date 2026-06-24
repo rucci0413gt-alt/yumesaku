@@ -266,7 +266,7 @@ const headline = review.headline || '';
 const price = item?.price ? `¥${item.price.toLocaleString()}` : '';
 const recommend = review.recommendFor || '';
 const desc = review.description || '';
-return generateThreadsText(headline, desc.slice(0, 60), recommend, price, item.name);
+return generateThreadsText(headline, desc.slice(0, 100), recommend, price, item.name);
 };
 
 const generateFullText = () => {
