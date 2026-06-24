@@ -72,6 +72,7 @@ ${productList}
 ・体験談風に「〜してみたら」「実際に使うと」を入れる
 ・テンションは落ち着いてるけど熱量がある感じ
 ・押しつけがましくない・でも芯がある
+・Web検索で得た最新トレンドや口コミ情報も自然に織り込む
 
 【禁止事項（絶対守る）】
 ・「〜について」「〜することが大切」「〜となっています」は使わない
@@ -98,17 +99,31 @@ JSONのみ出力（説明文・マークダウン不要）：
 "conclusion": "100文字まとめ"
 }`;
 
+// ★Web Search追加：最新トレンドを検索してから記事生成
 const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
 method: 'POST',
 headers: {
 'Content-Type': 'application/json',
 'x-api-key': process.env.ANTHROPIC_API_KEY,
 'anthropic-version': '2023-06-01',
+'anthropic-beta': 'web-search-2025-03-05',
 },
 body: JSON.stringify({
 model: 'claude-haiku-4-5-20251001',
 max_tokens: 2000,
-messages: [{ role: 'user', content: prompt }],
+tools: [
+{
+type: 'web_search_20250305',
+name: 'web_search',
+max_uses: 2,
+}
+],
+messages: [
+{
+role: 'user',
+content: `まず「${keyword} 2026 口コミ トレンド」で検索して最新情報を確認してから、以下の指示で記事を作成してください。\n\n${prompt}`
+}
+],
 }),
 });
 
@@ -122,7 +137,12 @@ detail: errorText.substring(0, 500),
 }
 
 const claudeData = await claudeRes.json();
-const text = claudeData.content?.[0]?.text || '';
+
+// Web Searchの結果を含む全contentブロックからテキストを抽出
+const text = (claudeData.content || [])
+.filter(block => block.type === 'text')
+.map(block => block.text)
+.join('');
 
 let article;
 try {
