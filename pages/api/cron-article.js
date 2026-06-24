@@ -16,7 +16,6 @@ export const config = {
 const CATEGORIES = ['ガジェット', 'PC周辺', 'オーディオ', 'スマホ', 'カメラ'];
 
 export default async function handler(req, res) {
-  // Vercel Cronからのリクエストのみ許可
   const authHeader = req.headers['authorization'];
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -27,10 +26,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ランダムにカテゴリを1つ選ぶ
     const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
 
-    // article APIを内部呼び出し
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3000';
@@ -47,10 +44,6 @@ export default async function handler(req, res) {
 
     const articleData = await articleRes.json();
 
-    // 成功ログ
-    console.log(`[Cron] ${new Date().toISOString()} - ${category}の記事生成完了`);
-    console.log(`[Cron] タイトル: ${articleData.article?.title}`);
-
     return res.status(200).json({
       success: true,
       category,
@@ -60,10 +53,11 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('[Cron] エラー:', error.message);
     return res.status(500).json({
       error: 'Cron実行エラー',
       message: error.message,
     });
   }
 }
+
+
