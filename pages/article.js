@@ -258,10 +258,8 @@ setLoading(false);
 
 const generateXText = (review, item) => {
 const headline = review.headline || '';
-const price = item?.price ? `¥${item.price.toLocaleString()}` : '';
-const recommend = review.recommendFor || '';
 const desc = review.description ? review.description.slice(0, 40) : '';
-return `【${category}】\n${headline}\n\n${desc}\n\n👤 ${recommend}\n💰 ${price}\n\n詳しくはコメント欄👇`;
+return `${headline}\n\n${desc}\n\n詳しくはコメント欄👇`;
 };
 
 const generateArticleThreadsText = (review, item) => {
