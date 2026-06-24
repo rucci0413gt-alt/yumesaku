@@ -107,9 +107,8 @@ ${reaction}
 ${headline}
 
 ➡︎ ${desc}
-➡︎ デジタル疲れしてる時って、余計なものは正直しんどい
 
-${priceNum}円。${closer}
+${closer}
 
 詳しくはコメント欄に貼っとくね👇
 
@@ -204,7 +203,7 @@ recommend = parsed.recommend || recommend;
 }
 
 const price = `¥${item.price.toLocaleString()}`;
-const xText = `【ガジェット】\n${headline}\n\n${desc}\n\n👤 ${recommend}\n💰 ${price}\n\n詳しくはコメント欄👇`;
+const xText = `${headline}\n\n${desc}\n\n詳しくはコメント欄👇`;
 const threadsText = generateThreadsText(headline, desc, recommend, price, item.name);
 
 setUrlItem({ ...item, mylink });
@@ -213,7 +212,7 @@ setUrlThreadsText(threadsText);
 
 } catch (e) {
 const price = `¥${item.price.toLocaleString()}`;
-const xText = `【ガジェット】\n${item.name.slice(0, 30)}\n\n在宅ワーク・クリエイター向けの人気商品！\n\n👤 在宅ワーカー・クリエイター\n💰 ${price}\n\n詳しくはコメント欄👇`;
+const xText = `${item.name.slice(0, 30)}\n\n在宅ワーク・クリエイター向けの人気商品！\n\n詳しくはコメント欄👇`;
 const threadsText = generateThreadsText(item.name.slice(0, 20), '在宅ワーク・クリエイター向けの人気商品！', '在宅ワーカー・クリエイター', price, item.name);
 setUrlItem({ ...item, mylink });
 setUrlXText(xText);
