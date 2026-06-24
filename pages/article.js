@@ -69,38 +69,47 @@ const encoded = encodeURIComponent(url);
 return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=3771004&pid=892616093&vc_url=${encoded}`;
 };
 
-// ★ここだけ変更：AI臭を除去したるっちさん語り口版
+// ★るっちさんお手本文体版
 const generateThreadsText = (headline, desc, recommend, price, name) => {
 const shortName = name.length > 25 ? name.slice(0, 25) + '...' : name;
+const priceNum = price.replace('¥', '').replace(',', '');
 
 const openers = [
-`正直、最初は半信半疑だったんだけど`,
-`これ、なんで今まで知らなかったんだろって感じ`,
-`在宅始めてから地味に困ってたやつ、解決した`,
 `使ってみてわかったんだけど`,
-`デスク環境を整えてきて、これは外せなくなった`,
+`正直、最初は半信半疑だったんだよね`,
+`在宅始めてから地味に気になってたやつ`,
+`これ、なんで今まで知らなかったんだろ💦`,
+`デスク環境整えてきて、これは外せなくなった`,
+];
+const reactions = [
+`懐かしいぃ〜💦しかも機能は超現代的っ`,
+`見た目シンプルなのに、中身が思ってたより全然いい`,
+`正直なめてたけど、使ったら普通に良かった`,
+`地味そうに見えて、デスクに置いたらけっこう映える`,
+`価格見た時は迷ったけど、買って正解だったかも`,
 ];
 const closers = [
-`イヤホン買う時、これセットで買っとけばよかったな`,
-`もっと早く使えばよかったと思ってる`,
+`逆に新鮮❣️`,
+`意外とアリかも🤔`,
 `地味だけど、あると全然違う`,
-`価格的にも試しやすいし、正直アリだと思う`,
-`デスク周りを整えたい人には刺さると思う`,
+`もっと早く使えばよかったな`,
+`これはリピートするやつかもしれない`,
 ];
 const opener = openers[Math.floor(Math.random() * openers.length)];
+const reaction = reactions[Math.floor(Math.random() * reactions.length)];
 const closer = closers[Math.floor(Math.random() * closers.length)];
 
 return `${opener}
 
 ${shortName}
+${reaction}
 
-${desc}
+${headline}
 
-${recommend}向けな感じだけど、ガジェット好きなら普通に気になると思う。
+➡︎ ${desc}
+➡︎ デジタル疲れしてる時って、余計なものは正直しんどい
 
-💰 ${price}
-
-${closer}
+${priceNum}円。${closer}
 
 詳しくはコメント欄に貼っとくね👇
 
