@@ -147,13 +147,15 @@ const message = reply.replace(/<GENERATE_APP>[\s\S]*?<\/GENERATE_APP>/, "").trim
 
 let appUrl = null;
 if (appHtml) {
-const filename = `apps/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.html`;
-const blob = await put(filename, appHtml, {
-access: "public",
-contentType: "text/html",
-});
-appUrl = blob.url;
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const filename = `apps/${id}.html`;
+  await put(filename, appHtml, {
+    access: "public",
+    contentType: "text/html",
+  });
+  appUrl = `/app/${id}`;
 }
+
 
 return res.status(200).json({ message, appHtml, appUrl });
 } catch (err) {
